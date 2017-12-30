@@ -19,7 +19,7 @@ func failOnError(err error) {
 }
 
 func main() {
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", ":"+PORT)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", ":"+PORT)
 	failOnError(err)
 
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
