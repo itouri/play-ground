@@ -27,8 +27,8 @@ func main() {
 	// TODO これがない時のエラー原因を理解する
 	e.Use(middleware.CORS())
 
-	e.GET("/api/spot/:id", handlers.GetSpot)
-	e.POST("/api/spot", handlers.PostSpot)
+	e.GET("/api/user/:id", handlers.GetUser)
+	e.POST("/api/user", handlers.PostUser)
 
 	e.GET("/calc", handlers.GetCalc)
 
