@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"strings"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
@@ -20,7 +19,7 @@ func fatalOnError(err error, str string) {
 // goroutineで分けたほうがいいな
 func NewServerConn() {
 	config := &ssh.ServerConfig{
-		NoClientAuth: false,
+		NoClientAuth: true,
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			if string(pass) != "" {
 				return nil, nil
@@ -28,36 +27,36 @@ func NewServerConn() {
 			return nil, fmt.Errorf("password rejected for %q", c.User())
 		},
 
-		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
-			// if key == nil {
-			// 	fmt.Printf("key is nil\n")
-			// 	return nil, nil
-			// }
+		// PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
+		// 	// if key == nil {
+		// 	// 	fmt.Printf("key is nil\n")
+		// 	// 	return nil, nil
+		// 	// }
 
-			// クライアントから公開鍵をパース
-			pubKey, err := ioutil.ReadFile("./id_rsa.pub")
-			fatalOnError(err, "Failed to parse private key")
+		// 	// クライアントから公開鍵をパース
+		// 	pubKey, err := ioutil.ReadFile("./id_rsa.pub")
+		// 	fatalOnError(err, "Failed to parse private key")
 
-			zkPubKey := strings.TrimSpace(string(pubKey))
-			pubkey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(key)))
-			if zkPubKey == pubkey {
-				fmt.Printf("OK! PUB::%#v\n\n", pubkey)
-				return nil, nil
-			} else {
-				fmt.Printf("CANT! PUB::%#v\n\n", pubkey)
-				// fmt.Printf("Marshal PUB::%#v\n", key.Marshal())
-				// fmt.Printf("MarshalAuth + TrimSpace PUB::%#v\n", pkey)
-				// // return &ssh.Permissions{Extensions: map[string]string{"key-id": com.ToStr(pkey.ID)}}, nil
-				return nil, fmt.Errorf("Private key mismatch with database public key")
-			}
+		// 	zkPubKey := strings.TrimSpace(string(pubKey))
+		// 	pubkey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(key)))
+		// 	if zkPubKey == pubkey {
+		// 		fmt.Printf("OK! PUB::%#v\n\n", pubkey)
+		// 		return nil, nil
+		// 	} else {
+		// 		fmt.Printf("CANT! PUB::%#v\n\n", pubkey)
+		// 		// fmt.Printf("Marshal PUB::%#v\n", key.Marshal())
+		// 		// fmt.Printf("MarshalAuth + TrimSpace PUB::%#v\n", pkey)
+		// 		// // return &ssh.Permissions{Extensions: map[string]string{"key-id": com.ToStr(pkey.ID)}}, nil
+		// 		return nil, fmt.Errorf("Private key mismatch with database public key")
+		// 	}
 
-			pkey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(key)))
-			fmt.Printf("PUB::%#v\n\n", pkey)
-			// fmt.Printf("Marshal PUB::%#v\n", key.Marshal())
-			// fmt.Printf("MarshalAuth + TrimSpace PUB::%#v\n", pkey)
-			// // return &ssh.Permissions{Extensions: map[string]string{"key-id": com.ToStr(pkey.ID)}}, nil
-			return nil, nil
-		},
+		// 	pkey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(key)))
+		// 	fmt.Printf("PUB::%#v\n\n", pkey)
+		// 	// fmt.Printf("Marshal PUB::%#v\n", key.Marshal())
+		// 	// fmt.Printf("MarshalAuth + TrimSpace PUB::%#v\n", pkey)
+		// 	// // return &ssh.Permissions{Extensions: map[string]string{"key-id": com.ToStr(pkey.ID)}}, nil
+		// 	return nil, nil
+		// },
 	}
 
 	// 秘密鍵登録
@@ -107,14 +106,17 @@ func NewServerConn() {
 		go func() {
 			defer channel.Close()
 			for {
+				log.Printf("ok\n")
 				line, err := term.ReadLine()
+				log.Printf("lined\n")
 				if err != nil {
-					break
+					log.Printf("failed to read: %v", err)
+					return
 				}
-				if line == "dog\n" {
-					fmt.Println("bow wow!")
-				} else {
-					fmt.Println(line)
+
+				if _, err := term.Write([]byte("You've typed: " + string(line) + "\r\n")); err != nil {
+					log.Printf("failed to write: %v", err)
+					return
 				}
 			}
 		}()
