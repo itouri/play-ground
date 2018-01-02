@@ -1,10 +1,10 @@
+var util = require('./util.js')
+
 var express = require('express');
 var app = require('express')();//expressを使うため
 var http = require('http').Server(app);//expressを使って通信を扱う
 var io = require('socket.io')(http);//socketを使うため
 var POST = 3000;//localhost:3000
-
-var room_id = 0;
 
 //ルートディレクトリにアクセスした時に動く処理
 app.get('/', (req, res) => {
@@ -39,13 +39,14 @@ io.on('connection', (socket) => {
   });
 
   // クライアントがRoomを追加
-  socket.on('add_room', () => {
+  socket.on('make_room', () => {
       socket.leave(current_room_id);
+      // ランダムな部屋IDを生成
+      var room_id = util.getUniqueStr()
       socket.join(room_id);
-      io.to(socket.id).emit('message', room_id+"に入ったよ！", "ForYou");
+      io.to(socket.id).emit('message', room_id+"を作ったよ!", "ForYou");
       io.to(socket.id).emit('change_room', room_id);
       current_room_id = room_id;
-      room_id++;
   });
 
   // クライアントから指示を受けた部屋に接続
@@ -56,6 +57,12 @@ io.on('connection', (socket) => {
       io.to(socket.id).emit('message', current_room_id+"に入ったよ！", "ForYou");
       io.to(socket.id).emit('change_room', Number(room));
   });
+
+  socket.on('leave_room', (room) => {
+    socket.leave(current_room_id);
+    io.to(socket.id).emit('message', current_room_id+"から退出したよ!", "ForYou");
+    io.to(socket.id).emit('change_room', Number(room));
+});
 
   //messageイベントで動く
   //全員に取得したメッセージとIDを表示

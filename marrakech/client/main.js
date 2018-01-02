@@ -32,8 +32,16 @@ $(() => {
         socket.emit('get_rooms');
     });
 
-    $('#add_room').click(() => {
-        socket.emit('add_room');
+    $('#make_room').click(() => {
+        socket.emit('make_room');
+        $('#make_room').hide();
+        $('#leave_room').show();
+    });
+
+    $('#leave_room').click(() => {
+        socket.emit('leave_room');
+        $('#make_room').show();
+        $('#leave_room').hide();
     });
 
     //$('.join_room').click(function() {  // appendした要素には .clickは使えないらしい
