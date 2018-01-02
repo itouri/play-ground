@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>chat app node.js</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.js"></script>
+  <style>
+  * {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: Verdana;
+  }
+  ul {
+    list-style-type: none;
+    padding: 20px;
+    background: #000;
+    color: white;
+  }
+  #controls {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    padding: 20px;
+    display: block;
+    width: 100%;
+  }
+  #controls #msj {
+    float: left;
+    width: 80%;
+    display: block;
+    padding: 20px;
+  }
+  #controls #btn {
+    float: right;
+    padding: 20px;
+  }
+  </style>
+</head>
+<body>
+  <script>
+　　<!-- 通信用 -->
+    var socket = io();
+    var room_id = 0;
+
+    <!-- jQueryの処理 -->
+    $(function() {
+　　<!-- サブミットボタンを押された処理 -->
+      $('#chat').submit(function() {
+　　　<!-- 入力フォームには入っている値を取得 -->
+        var mensaje = $('#msj').val();
+　　　　　　　　　　　　　　　　
+　　　　<!-- 値がなかったら終了 -->
+        if (mensaje === '') return false;
+
+　　　<!-- 全体にmessage処理（サーバーサイドにメッセージを渡す） -->
+        socket.emit('message', {
+            'room': room_id,
+            'msg': $('#msj').val()
+        });
+
+　　　　<!-- 入力フォームを空にしてフォーカスする -->
+        $('#msj').val('').focus();
+　　　　　　　　　　　　　　　　<!-- 処理終了 -->
+        return false;
+    });
+    $('#room_id').change(function() {
+        socket.emit('change_room', $('#room_id').val());
+    });
+    $('#get_rooms').click(function() {
+        socket.emit('get_rooms');
+    });
+    $('#add_room').click(function() {
+        socket.emit('add_room');
+    });
+    //$('.join_room').click(function() {  // appendした要素には .clickは使えないらしい
+    $(document).on('click', ".join_room", function() {
+        socket.emit('join_room', $(this).val());
+    });
+   });
+
+　　<!-- サーバーサイドから来たメッセージを挿入 -->
+    socket.on('message', function(msj, id) {
+      $('#message').append($('<li>').text(id + " : " + msj));
+      //$('#message').text(id + " : " + msj);
+    });
+    // Roomの一覧を取得
+    socket.on('show_room_list', function(rooms) {
+        $('#rooms').empty();
+        for (var room in rooms) {
+            // 参考:https://stackoverflow.com/questions/6631501/how-to-list-rooms-on-socket-io-nodejs-server
+            if (!rooms[room]['sockets'].hasOwnProperty(room)) {
+                var btn = $('<input class="join_room" type="button" value='+room+'>');
+                $('#rooms').append(btn);
+            }
+        }
+    });
+    socket.on('change_room', function(room) {
+        room_id = room;
+        
+    });
+  </script>
+  <ul id="message"></ul>
+  <div id="rooms"></div>
+
+  <div id="controls">
+    <div id="action">
+        <input type="number" id="room_id">
+        <input type="button" id="get_rooms" value="get_rooms">
+        <input type="button" id="add_room" value="add_room">
+    </div>
+    <form action="" id="chat">
+        <input type="text" id="msj" placeholder="Escribe tu mensaje...">
+        <input type="submit" id="btn" value="Enviar">
+    </form>
+ </div>
+</body>
+</html>
