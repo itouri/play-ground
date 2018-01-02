@@ -2,5 +2,5 @@
 
 ## How to run
 ``` sh
-node chat.js
+node server.js
 ```
