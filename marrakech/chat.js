@@ -1,3 +1,4 @@
+var express = require('express');
 var app = require('express')();//expressを使うため
 var http = require('http').Server(app);//expressを使って通信を扱う
 var io = require('socket.io')(http);//socketを使うため
@@ -8,8 +9,10 @@ var room_id = 0;
 //ルートディレクトリにアクセスした時に動く処理
 app.get('/', function(req, res) {
   //index.htmlにリダイレクトする
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile('./client/index.html', { root: __dirname });
 });
+
+app.use("/",express.static('client'));
 
 //socket.ioに接続された時に動く処理
 io.on('connection', function(socket) {
