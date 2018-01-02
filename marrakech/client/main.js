@@ -1,5 +1,5 @@
 // 通信用 
-var socket = io();
+const socket = io();
 var room_id = 0;
 
 // jQueryの処理
@@ -7,10 +7,10 @@ $(() => {
 　　// サブミットボタンを押された処理
     $('#chat').submit(() => {
     　　　// 入力フォームには入っている値を取得
-        var mensaje = $('#msj').val();
+        var message = $('#msj').val();
     　　　　　　　　　　　　　　　　
     　　　　// 値がなかったら終了
-        if (mensaje === '') return false;
+        if (message === '') return false;
 
     　　　// 全体にmessage処理（サーバーサイドにメッセージを渡す）
         socket.emit('message', {

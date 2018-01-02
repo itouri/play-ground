@@ -7,7 +7,7 @@ var POST = 3000;//localhost:3000
 var room_id = 0;
 
 //ルートディレクトリにアクセスした時に動く処理
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
   //index.htmlにリダイレクトする
   res.sendFile('./client/index.html', { root: __dirname });
 });
@@ -15,7 +15,7 @@ app.get('/', function(req, res) {
 app.use("/",express.static('client'));
 
 //socket.ioに接続された時に動く処理
-io.on('connection', function(socket) {
+io.on('connection', (socket) => {
   //接続時に振られた一意のIDをコンソールに表示
   console.log('入室したID : %s', socket.id);
 
@@ -25,7 +25,7 @@ io.on('connection', function(socket) {
   io.emit('message', socket.id + 'さんが入室しました！', 'System');
 
   // Room管理
-  socket.on('change_room', function(room) {
+  socket.on('change_room', (room) => {
       io.emit('message', room + "にルームを変更したよ！", socket.id);
       socket.leave(current_room_id);
       socket.join(room);
@@ -34,12 +34,12 @@ io.on('connection', function(socket) {
   });
   
   // Roomの一覧を取得
-  socket.on('get_rooms', function() {
+  socket.on('get_rooms', () => {
       io.to(socket.id).emit('show_room_list', io.sockets.adapter.rooms);
   });
 
   // クライアントがRoomを追加
-  socket.on('add_room', function() {
+  socket.on('add_room', () => {
       socket.leave(current_room_id);
       socket.join(room_id);
       io.to(socket.id).emit('message', room_id+"に入ったよ！", "ForYou");
@@ -49,7 +49,7 @@ io.on('connection', function(socket) {
   });
 
   // クライアントから指示を受けた部屋に接続
-  socket.on('join_room', function(room) {
+  socket.on('join_room', (room) => {
       socket.leave(current_room_id);
       socket.join(Number(room));
       current_room_id = Number(room);
@@ -59,13 +59,13 @@ io.on('connection', function(socket) {
 
   //messageイベントで動く
   //全員に取得したメッセージとIDを表示
-  socket.on('message', function(obj) {
+  socket.on('message', (obj) => {
     io.to(obj.room).emit('message', obj.msg, socket.id);
   });
 
   //接続が切れた時に動く
   //接続が切れたIDを全員に表示
-  socket.on('disconnect', function(e) {
+  socket.on('disconnect', (e) => {
     console.log('接続が切れたID : %s', socket.id);
     // 退室はこれでOK
     io.emit('message', socket.id + 'さんが退出しました！', 'System');
@@ -73,6 +73,6 @@ io.on('connection', function(socket) {
 });
 
 //接続待ち状態になる
-http.listen(POST, function() {
+http.listen(POST, () => {
   console.log('接続開始', POST);
 });
