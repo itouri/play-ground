@@ -5,6 +5,33 @@ var Render = new Render();
 var revision = 0;
 var point_x = 0;
 var point_y = 0;
+var COL = 8;
+
+var CELL_SIZE = RECT_CANV_w / COL | 0;
+
+// var RECT_CANV = {
+//     x: 0,
+//     y: 0,
+//     w: 500,
+//     h: 500
+// };
+
+// var RECT_BOARD = {
+//     x: 0,
+//     y: 0,
+//     w: 500,
+//     h: 500
+// };
+
+var RECT_CANV_x = 0;
+var RECT_CANV_y = 0;
+var RECT_CANV_w = 500;
+var RECT_CANV_h = 500;
+
+var RECT_BOARD_x = 0;
+var RECT_BOARD_y = 0;
+var RECT_BOARD_w = 500;
+var RECT_BOARD_h = 500;
 
 function init() {
     if (!evented) {
@@ -47,22 +74,30 @@ function getMousePosition(e) {
 }
 
 function hitTest(x, y) {
-    var objects = [Render.RECT_BOARD];
+    // var objects = [RECT_BOARD];
     var click_obj = null;
     var selected = {
         name: "",
         value: 0
     }
-    for (var i = 0; i < objects.length; i++) {
-        if (objects[i].w >= x && objects[i].x <= x && objects[i].h >= y && objects[i].y <= y) {
-            selected.name = "RECT_BOARD";
-            break;
-        }
+    // for (var i = 0; i < objects.length; i++) {
+    //     if (objects[i].w >= x && objects[i].x <= x && objects[i].h >= y && objects[i].y <= y) {
+    //         selected.name = "RECT_BOARD";
+    //         break;
+    //     }
+    // }
+
+    if (RECT_BOARD_w >= x && 
+        RECT_BOARD_x <= x && 
+        RECT_BOARD_h >= y && 
+        RECT_BOARD_y <= y) {
+        selected.name = "RECT_BOARD";
     }
+
     switch (true) {
     case selected.name === "RECT_BOARD":
         selected.name = "RECT_BOARD";
-        selected.value = Math.floor(y / Render.CELL_SIZE) * COL + Math.floor(x / Render.CELL_SIZE)
+        selected.value = Math.floor(y / CELL_SIZE) * COL + Math.floor(x / CELL_SIZE)
         break;
     }
     return selected;
@@ -79,7 +114,7 @@ function ev_mouseClick(e) {
     if (selected.name === "RECT_BOARD") {
         if (game.putField(selected.value) === true) {
             revision += 1;
-            Render.render(ctx, selected.value, game.field);
+            render(ctx, selected.value, game.field);
         }
     }
 }
