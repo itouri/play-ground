@@ -52,17 +52,17 @@ io.on('connection', (socket) => {
   // クライアントから指示を受けた部屋に接続
   socket.on('join_room', (room) => {
       socket.leave(current_room_id);
-      socket.join(Number(room));
-      current_room_id = Number(room);
+      socket.join(room);
+      current_room_id = room;
       io.to(socket.id).emit('message', current_room_id+"に入ったよ！", "ForYou");
-      io.to(socket.id).emit('change_room', Number(room));
+      io.to(socket.id).emit('change_room', room);
   });
 
   socket.on('leave_room', (room) => {
     socket.leave(current_room_id);
     io.to(socket.id).emit('message', current_room_id+"から退出したよ!", "ForYou");
     io.to(socket.id).emit('change_room', Number(room));
-});
+  });
 
   //messageイベントで動く
   //全員に取得したメッセージとIDを表示

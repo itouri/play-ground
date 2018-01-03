@@ -46,7 +46,8 @@ $(() => {
 
     //$('.join_room').click(function() {  // appendした要素には .clickは使えないらしい
     $(document).on('click', ".join_room", () => {
-        socket.emit('join_room', $(this).val());
+        // TODO
+        socket.emit('join_room', $(this).attr("value"));
     });
 });
 
