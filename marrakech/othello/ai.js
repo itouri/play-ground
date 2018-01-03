@@ -10,6 +10,8 @@
     global.Ai.getNodeList = getNodeList;
     global.Ai.putMap = putMap;
 
+
+
     //-------------------------------------
     var COL = 8;
     var COLXCOL = COL * COL;
@@ -102,51 +104,51 @@
     }
 
 
-    function evalMap(map) {
-        var ev = 0;
-        for (var i = 0; i < COLXCOL; i++) {
-            switch (map[i]) {
-            case 1:
-                ev += 1;
-                break;
-            case -1:
-                ev += -1;
-                break;
-            }
-        }
-        return ev;
-    }
+    // function evalMap(map) {
+    //     var ev = 0;
+    //     for (var i = 0; i < COLXCOL; i++) {
+    //         switch (map[i]) {
+    //         case 1:
+    //             ev += 1;
+    //             break;
+    //         case -1:
+    //             ev += -1;
+    //             break;
+    //         }
+    //     }
+    //     return ev;
+    // }
 
-    function isEnd(map) {
-        for (var i = 0; i < COLXCOL; i++) {
-            if (map[i] != 0) {
-                return false;
-            }
-        }
-        return true;
-    }
+    // function isEnd(map) {
+    //     for (var i = 0; i < COLXCOL; i++) {
+    //         if (map[i] != 0) {
+    //             return false;
+    //         }
+    //     }
+    //     return true;
+    // }
 
-    function getWinner(map) {
-        var score = 0;
-        if (!isEnd(map)) {
-            return 0;
-        } else {
-            for (var i = 0; i < COLXCOL; i++) {
-                if (map[i] < 0) {
-                    score += -1;
-                } else if (map[i] > 0) {
-                    score += 1;
-                }
-            }
-            if (score > 0) {
-                return 1;
-            } else if (score < 0) {
-                return -1;
-            } else {
-                return 0;
-            }
-        }
-    }
+    // function getWinner(map) {
+    //     var score = 0;
+    //     if (!isEnd(map)) {
+    //         return 0;
+    //     } else {
+    //         for (var i = 0; i < COLXCOL; i++) {
+    //             if (map[i] < 0) {
+    //                 score += -1;
+    //             } else if (map[i] > 0) {
+    //                 score += 1;
+    //             }
+    //         }
+    //         if (score > 0) {
+    //             return 1;
+    //         } else if (score < 0) {
+    //             return -1;
+    //         } else {
+    //             return 0;
+    //         }
+    //     }
+    // }
 
     // function deepThinkAllAB(map, turn, depth, a, b) {
     //     var best_score = turn * 999 * -1 | 0;

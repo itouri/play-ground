@@ -77,6 +77,18 @@ io.on('connection', (socket) => {
     // 退室はこれでOK
     io.emit('message', socket.id + 'さんが退出しました！', 'System');
   });
+
+  // クライアントからが石を置いた
+  socket.on('put_stone', () => {
+    if (Ai.canPut(state.map, selected.value, state.turn) === true) {
+        state.map = Ai.putMap(state.map, selected.value, state.turn);
+        state.turn = -1 * state.turn;
+        state.revision += 1;
+        socket.emit('change_turn', state.map);
+    } else {
+        socket.emit('cant_put');
+    }
+  });
 });
 
 //接続待ち状態になる
