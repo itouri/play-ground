@@ -7,12 +7,12 @@
 
 <body>
     <canvas id="canv" width="500px" height="500px"></canvas>
-    <script src="./render.js"></script>
+    <script src="./renderer.js"></script>
     <script src="./game.js"></script>
     <script src="./main.js"></script>
     <script>
         var ctx = document.getElementById("canv").getContext('2d');
-        init();
+        init(ctx);
     </script>
     <style>
         #canv {

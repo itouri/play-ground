@@ -1,39 +1,13 @@
-var ctx = ctx;
+var ctx;
 var evented = false;
 var game = new Game();
-var Render = new Render();
+var renderer = new Renderer();
 var revision = 0;
 var point_x = 0;
 var point_y = 0;
 var COL = 8;
 
-var CELL_SIZE = RECT_CANV_w / COL | 0;
-
-// var RECT_CANV = {
-//     x: 0,
-//     y: 0,
-//     w: 500,
-//     h: 500
-// };
-
-// var RECT_BOARD = {
-//     x: 0,
-//     y: 0,
-//     w: 500,
-//     h: 500
-// };
-
-var RECT_CANV_x = 0;
-var RECT_CANV_y = 0;
-var RECT_CANV_w = 500;
-var RECT_CANV_h = 500;
-
-var RECT_BOARD_x = 0;
-var RECT_BOARD_y = 0;
-var RECT_BOARD_w = 500;
-var RECT_BOARD_h = 500;
-
-function init() {
+function init(_ctx) {
     if (!evented) {
         setEvents();
         evented = true;
@@ -41,6 +15,7 @@ function init() {
     revision = 0;
     point_x = 0;
     point_y = 0;
+    ctx = _ctx;
 }
 
 function setEvents() {
@@ -74,30 +49,33 @@ function getMousePosition(e) {
 }
 
 function hitTest(x, y) {
-    // var objects = [RECT_BOARD];
+    var objects = [renderer.RECT_BOARD];
     var click_obj = null;
     var selected = {
         name: "",
         value: 0
     }
-    // for (var i = 0; i < objects.length; i++) {
-    //     if (objects[i].w >= x && objects[i].x <= x && objects[i].h >= y && objects[i].y <= y) {
-    //         selected.name = "RECT_BOARD";
-    //         break;
-    //     }
-    // }
+    for (var i = 0; i < objects.length; i++) {
+        if (objects[i].w >= x &&
+            objects[i].x <= x &&
+            objects[i].h >= y && 
+            objects[i].y <= y) {
+            selected.name = "RECT_BOARD";
+            break;
+        }
+    }
 
-    if (RECT_BOARD_w >= x && 
-        RECT_BOARD_x <= x && 
-        RECT_BOARD_h >= y && 
-        RECT_BOARD_y <= y) {
+    if (renderer.RECT_BOARD.w >= x &&
+        renderer.RECT_BOARD.x <= x && 
+        renderer.RECT_BOARD.h >= y &&
+        renderer.RECT_BOARD.y <= y) {
         selected.name = "RECT_BOARD";
     }
 
     switch (true) {
     case selected.name === "RECT_BOARD":
         selected.name = "RECT_BOARD";
-        selected.value = Math.floor(y / CELL_SIZE) * COL + Math.floor(x / CELL_SIZE)
+        selected.value = Math.floor(y / renderer.CELL_SIZE) * COL + Math.floor(x / renderer.CELL_SIZE)
         break;
     }
     return selected;
@@ -106,7 +84,7 @@ function hitTest(x, y) {
 function ev_mouseMove(e) {
     getMousePosition(e);
     var selected = hitTest(point_x, point_y);
-    Render.render(ctx, selected.value, game.field);
+    renderer.render(ctx, selected.value, game.field);
 }
 
 function ev_mouseClick(e) {
@@ -114,7 +92,7 @@ function ev_mouseClick(e) {
     if (selected.name === "RECT_BOARD") {
         if (game.putField(selected.value) === true) {
             revision += 1;
-            render(ctx, selected.value, game.field);
+            renderer.render(ctx, selected.value, game.field, revision);
         }
     }
 }
