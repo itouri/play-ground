@@ -18,6 +18,7 @@ class Game {
             0, 0, 0, 0, 0, 0, 0, 0,
         ];
         this.turn = this.BLACK;
+        this.isEnd = false;
     }
 
     getEffectArray(selected) {
@@ -82,8 +83,27 @@ class Game {
             console.log("pass!")
             this.turn *= -1;
             if (this.isPass()) {
-                // gameEnd();
+                this.isEnd = true;
             }
         }
+    }
+
+    // [黒石の数, 白石の数]
+    getStoneNums() {
+        var stoneNums = {
+            black: 0,
+            white: 0,
+        };
+        this.field.forEach((cell) => {
+            switch (cell) {
+                case this.BLACK:
+                    stoneNums.black += 1;
+                    break;
+                case this.WHITE:
+                    stoneNums.white += 1;
+                    break;
+            }
+        });
+        return stoneNums;
     }
 }

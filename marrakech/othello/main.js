@@ -16,6 +16,7 @@ function init(_ctx) {
     point_x = 0;
     point_y = 0;
     ctx = _ctx;
+    renderer.render(ctx, -1, game.field, revision);
 }
 
 function setEvents() {
@@ -84,7 +85,7 @@ function hitTest(x, y) {
 function ev_mouseMove(e) {
     getMousePosition(e);
     var selected = hitTest(point_x, point_y);
-    renderer.render(ctx, selected.value, game.field);
+    renderer.render(ctx, selected.value, game.field, revision);
 }
 
 function ev_mouseClick(e) {
@@ -93,6 +94,14 @@ function ev_mouseClick(e) {
         if (game.putField(selected.value) === true) {
             revision += 1;
             renderer.render(ctx, selected.value, game.field, revision);
+            updateUI();
         }
     }
+}
+
+function updateUI() {
+    var stones = game.getStoneNums();
+    $("#stones").html("■"+stones.black+" - □"+stones.white);
+    var str = (game.turn == game.BLACK) ? "Turn: ■" : "Turn: □";
+    $("#turn").html(str);
 }
