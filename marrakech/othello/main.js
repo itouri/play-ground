@@ -104,4 +104,18 @@ function updateUI() {
     $("#stones").html("■"+stones.black+" - □"+stones.white);
     var str = (game.turn == game.BLACK) ? "Turn: ■" : "Turn: □";
     $("#turn").html(str);
+    if(game.isEnd) {
+        $("#reset").show();
+    } else {
+        $("#reset").hide();
+    }
 }
+
+// jQuery
+$(() => {
+    $('#reset').click(() => {
+        game.initGame();
+        init(ctx);
+    });
+});
+    
