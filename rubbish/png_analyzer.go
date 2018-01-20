@@ -53,6 +53,7 @@ func readChunks(fp *os.File) []io.Reader {
 		// err = binary.Read(buf, binary.LittleEndian, kind)
 		// panicOnErr(err)
 
+		// don't move seek postion by the io.NewSectionReader
 		chunks = append(chunks,
 			io.NewSectionReader(fp, offset, int64(length)+12))
 
