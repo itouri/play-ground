@@ -12,6 +12,8 @@ if [ $? -eq 1 ]; then
     exit 1
 fi 
 
+set -eu
+
 docker pull alpine
 docker run --name alpine alpine
 docker export alpine > alpine.tar
