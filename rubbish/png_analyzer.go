@@ -18,8 +18,11 @@ func panicOnErr(err error) {
 func dumpChunk(chunk io.Reader) {
 	var length int32
 	binary.Read(chunk, binary.BigEndian, &length)
+
+	// read kind string
 	buf := make([]byte, 4)
 	chunk.Read(buf)
+
 	fmt.Printf("chunk '%v' (%d bytes)\n", string(buf), length)
 }
 
@@ -53,6 +56,9 @@ func readChunks(fp *os.File) []io.Reader {
 		// err = binary.Read(buf, binary.LittleEndian, kind)
 		// panicOnErr(err)
 
+		// 値を保存してるわけじゃなくて *Fileとoffestと長さを保存してる
+		// readChunks()のあとにmain()でfp.Close()するとdumpChunk()で
+		// 読めなくなる
 		// don't move seek postion by the io.NewSectionReader
 		chunks = append(chunks,
 			io.NewSectionReader(fp, offset, int64(length)+12))
