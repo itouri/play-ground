@@ -7,15 +7,11 @@ import (
 	"time"
 )
 
-func sleep(numsChan chan int, n int, wait time.Duration) {
-	time.Sleep(wait * time.Second)
-	fmt.Printf("end sleep: %d\n", n)
-	numsChan <- n
-}
-
 func do(numChans chan chan int, ch chan int, n int, wait time.Duration) {
 	numChans <- ch
-	sleep(ch, n, wait)
+	time.Sleep(wait * time.Second)
+	fmt.Printf("end sleep: %d\n", n)
+	ch <- n
 }
 
 func main() {
