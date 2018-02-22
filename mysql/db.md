@@ -1,5 +1,5 @@
 | Left align | Right align | Center align |
-|:-----------|------------:|:------------:|
+|:-----------:|:------------:|:------------:|
 | This | This | This |
 | column | column | column |
 | will | will | will |

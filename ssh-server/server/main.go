@@ -137,6 +137,7 @@ func handleChannel(newChannel ssh.NewChannel) {
 		close()
 		return
 	}
+	log.Print("Created pty...")
 
 	//pipe session to bash and visa-versa
 	var once sync.Once

@@ -1,0 +1,6 @@
+*.log
+*#
+marrakech/node_modules
+alpine.tar
+rootfs
+gettimeofday
