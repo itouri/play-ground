@@ -10,5 +10,7 @@ func main() {
 	emitter := make(chan interface{})
 	source := observable.Observable(emitter)
 
-	watcher := observer.Observer{}
+	watcher := observer.Observer{
+		
+	}
 }
