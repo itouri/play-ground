@@ -1,11 +1,15 @@
 package singleton
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestSingleton(t *testing.T) {
+	assert := assert.New(t)
 	inst1 := GetInstance()
 	inst2 := GetInstance()
-	if inst1 != inst2 {
-		t.Errorf("inst1 != inst2\n")
-	}
+
+	assert.Equal(inst1, inst2)
 }

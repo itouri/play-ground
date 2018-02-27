@@ -1,11 +1,13 @@
 package memento
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMemento(t *testing.T) {
+	assert := assert.New(t)
 	caretaker := make(map[string]*Memento)
 	originator := &Originator{}
 	// すごい originator.CrateMemento("State1", 10)って書きたくなる
@@ -14,7 +16,6 @@ func TestMemento(t *testing.T) {
 	originator.Set("State2", 20)
 	caretaker["State2"] = originator.CreateMemento()
 	originator.RestoreMemento(caretaker["State1"])
-	fmt.Println(originator.value)
-	// caretaker.AddMemento(originator.CreateMemento())
-	// originator.RestoreMemento(caretaker.GetMemento(0))
+
+	assert.Equal(10, originator.value)
 }

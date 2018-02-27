@@ -33,20 +33,3 @@ func (o *Originator) CreateMemento() *Memento {
 func (o *Originator) RestoreMemento(m *Memento) {
 	o.state, o.value = m.getState()
 }
-
-// 保存したMemento達を管理する．
-// この構造体はtestの方にあるべきかも
-// type Caretaker struct {
-// 	savedStates []*Memento
-// }
-
-// func (c *Caretaker) AddMemento(m *Memento) {
-// 	c.savedStates = append(c.savedStates, m)
-// }
-
-// func (c *Caretaker) GetMemento(index int) *Memento {
-// 	if 0 <= index && index < len(c.savedStates) {
-// 		return c.savedStates[index]
-// 	}
-// 	return nil
-// }
