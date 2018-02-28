@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+// Productがメンバー変数を持っていたら?
+// Productができること，Concrete.AnOperation()が実行する
 type Product interface {
 	Use() string
 }
@@ -29,6 +31,7 @@ func (self *ConcreteCreate) FactoryMethod(owner string) ConcreteProduct {
 	return ConcreteProduct{owner}
 }
 
+// Productに対する実際の操作
 func (self *ConcreteCreate) AnOparation(product ConcreteProduct) {
 	product.Use()
 }
