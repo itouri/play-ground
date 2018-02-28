@@ -14,9 +14,9 @@ type ConcreteProduct struct {
 	User string
 }
 
-func (self *ConcreteProduct) Use() string {
-	fmt.Printf("User is %s", self.User)
-	return self.User
+func (c *ConcreteProduct) Use() string {
+	fmt.Printf("User is %s", c.User)
+	return c.User
 }
 
 type Createtor interface {
@@ -27,11 +27,11 @@ type Createtor interface {
 type ConcreteCreate struct {
 }
 
-func (self *ConcreteCreate) FactoryMethod(owner string) ConcreteProduct {
+func (c *ConcreteCreate) FactoryMethod(owner string) ConcreteProduct {
 	return ConcreteProduct{owner}
 }
 
 // Productに対する実際の操作
-func (self *ConcreteCreate) AnOparation(product ConcreteProduct) {
+func (c *ConcreteCreate) AnOparation(product ConcreteProduct) {
 	product.Use()
 }

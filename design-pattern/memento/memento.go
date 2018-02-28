@@ -10,6 +10,7 @@ func (m *Memento) getState() (string, int) {
 	return m.state, m.value
 }
 
+// 現状を表現する構造体
 type Originator struct {
 	state string
 	value int
