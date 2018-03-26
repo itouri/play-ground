@@ -14,7 +14,7 @@ color.subscribe(val => $h1.css('color', val));
 
 bind = (type, elem, subject) => {
     Rx.Observable.fromEvent(elem, type)
-        .subscribe(e => text.next(e.target.value));
+        .subscribe(e => subject.next(e.target.value));
 };
 
 text.combineLatest(size, color, (text, size, color) => {
