@@ -1,48 +1,28 @@
-var $text = $('.text>input');
-var $h1 = $('h1');
+const $h1 = $('h1');
+const $text = $('.text>input');
+const $size = $('.size>input');
+const $color = $('.color>input');
+const $combined = $('#combined');
 
 text = new Rx.BehaviorSubject($text.val());
+size = new Rx.BehaviorSubject($size.val());
+color = new Rx.BehaviorSubject($color.val());
+
 text.subscribe(val => $h1.text(val));
+size.subscribe(val => $h1.css('font-size', val + 'px'));
+color.subscribe(val => $h1.css('color', val));
 
-Rx.Observable.fromEvent($text, 'keyup')
-    .subscribe(e => text.next(e.target.value))
+bind = (type, elem, subject) => {
+    Rx.Observable.fromEvent(elem, type)
+        .subscribe(e => text.next(e.target.value));
+};
 
-// var $color, $combined, $h1, $size, $text, bind, color, size, text;
- 
-// $h1 = $('h1');
-// $text = $('.text>input');
-// $size = $('.size>input');
-// $color = $('.color>input');
-// $combined = $('#combined');
+text.combineLatest(size, color, (text, size, color) => {
+    return "text: " + text + "<br>Size: " + size + "px<br>Color: " + color;
+}).subscribe((val) => { 
+    return $combined.html(val);
+});
 
-// text = new Rx.BehaviorSubject($text.val());
-// size = new Rx.BehaviorSubject($size.val());
-// color = new Rx.BehaviorSubject($color.val());
-
-// text.subscribe(function (val) {
-//     $h1.text(val);
-// });
-
-// size.subscribe(function (val) {
-//     $h1.css('font-size', val + 'px');
-// });
-
-// color.subscribe(function (val) {
-//     $h1.css('color', val);
-// });
-
-// bind = function (eType, elem, subject) {
-//     Rx.Observable.fromEvent(elem, eType).subscribe(function (e) {
-//         subject.next(e.target.value);
-//     });
-// };
-
-// text.combineLatest(size, color, function (text, size, color) {
-//     return "text: " + text + "<br>Size: " + size + "px<br>Color: " + color;
-// }).subscribe(function (val) {
-//     return $combined.html(val);
-// });
-
-// bind('keyup', $text, text);
-// bind('keyup change', $size, size);
-// bind('change', $color, color);
+bind('keyup', $text, text);
+bind('keyup change', $size, size);
+bind('change', $color, color);
