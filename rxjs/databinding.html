@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>RxJS</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.5.7/Rx.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 contenteditable="true">TEXT</h1>
+
+        <p class="text">
+            <input type="text" placeholder="Text" value="TEXT"/>
+        </p>
+
+        <p class="size">
+            <input type="number" placeholder="Size" step="10" value="40"/>
+        </p>
+
+        <p class="color">
+            <input title="color" type="color" placeholder="Color" value="#ffffff"/>
+        </p>
+
+        <p id="combined"></p>
+    </div>
+</body>
+    <script src="./databinding.js"></script>
+</html>
