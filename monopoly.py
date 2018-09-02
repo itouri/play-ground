@@ -27,7 +27,7 @@ def game():
         except ValueError:
             print("not invalid input")
             continue
-
+        
         if len(a) == 2:
             _player_vlaue[a[0]-1] += a[1]
         elif len(a) == 3:
@@ -36,11 +36,8 @@ def game():
         else:
             print("format is not valid")
             continue
-            
-        if a == 33 and b == 4:
-            break
+        
         display_status()
-
 
 def init():
     print("please input player number")
@@ -50,8 +47,10 @@ def init():
     input_player_name()
     print("need retry? y/n")
     c = input()
-    if c == "y":
+    while c == "y":
         input_player_name()
+        print("need retry? y/n")
+        c = input()
 
     global _longest_name_len
     _longest_name_len = max(map(len, _player_name))
