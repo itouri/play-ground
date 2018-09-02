@@ -44,9 +44,7 @@ def init():
     global _player_num
     _player_num = int(input())
 
-    input_player_name()
-    print("need retry? y/n")
-    c = input()
+    c = "y"
     while c == "y":
         input_player_name()
         print("need retry? y/n")
