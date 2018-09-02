@@ -20,7 +20,7 @@ def input_player_name():
         _player_name[i] = input()
 
 def game():
-    while(True):
+    while True:
         a = []
         try:
             a = list(map(int, input().split()))
