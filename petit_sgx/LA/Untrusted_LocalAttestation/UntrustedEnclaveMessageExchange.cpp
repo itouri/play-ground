@@ -48,7 +48,7 @@ ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
 
-	ret = MasterEnclave_session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
+	ret = GrapheneEnclave_session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	
