@@ -32,7 +32,7 @@
 #include "sgx_eid.h"
 #include "EnclaveMessageExchange.h"
 #include "error_codes.h"
-#include "Utility_E1.h"
+#include "Utility_M.h"
 #include "stdlib.h"
 #include "string.h"
 

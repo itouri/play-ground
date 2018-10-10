@@ -32,7 +32,7 @@
 
 // Enclave2.cpp : Defines the exported functions for the DLL application
 #include "sgx_eid.h"
-#include "GEnclave_t.h"
+#include "GrapheneEnclave_t.h"
 #include "EnclaveMessageExchange.h"
 #include "error_codes.h"
 #include "Utility_G.h"

@@ -4,3 +4,10 @@ marrakech/node_modules
 alpine.tar
 rootfs
 gettimeofday
+
+*.o
+*_t.c
+*_t.h
+*_u.c
+*_u.h
+*.a

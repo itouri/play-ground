@@ -113,8 +113,9 @@ int _tmain(int argc, _TCHAR* argv[])
     do
     {
         // 必要なのは master E と graphene E とのコネクションだけ
+        // ファイル名＋関数名 どうやってる？
         //Test Create session between Enclave1(Source) and Enclave2(Destination)
-        status = Enclave1_test_create_session(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        status = MasterEnclave_test_create_session(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
         if (status!=SGX_SUCCESS)
         {
             printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
@@ -134,7 +135,7 @@ int _tmain(int argc, _TCHAR* argv[])
         }
 
         //Test Enclave to Enclave call between Enclave1(Source) and Enclave2(Destination)
-        status = Enclave1_test_enclave_to_enclave_call(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        status = MasterEnclave_test_enclave_to_enclave_call(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
         if (status!=SGX_SUCCESS)
         {
             printf("Enclave1_test_enclave_to_enclave_call Ecall failed: Error code is %x", status);
@@ -153,7 +154,7 @@ int _tmain(int argc, _TCHAR* argv[])
             }
         }
         //Test message exchange between Enclave1(Source) and Enclave2(Destination)
-        status = Enclave1_test_message_exchange(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        status = MasterEnclave_test_message_exchange(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
         if (status!=SGX_SUCCESS)
         {
             printf("Enclave1_test_message_exchange Ecall failed: Error code is %x", status);
@@ -173,7 +174,7 @@ int _tmain(int argc, _TCHAR* argv[])
         }
 
         //Test Closing Session between Enclave1(Source) and Enclave2(Destination)
-        status = Enclave1_test_close_session(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        status = MasterEnclave_test_close_session(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
         if (status!=SGX_SUCCESS)
         {
             printf("Enclave1_test_close_session Ecall failed: Error code is %x", status);

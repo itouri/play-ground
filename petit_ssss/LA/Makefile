@@ -268,11 +268,11 @@ App/GrapheneEnclave_u.o: GrapheneEnclave/GrapheneEnclave_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-App/%.o: App/%.cpp MasterEnclave/MasterEnclave_u.h GrapheneEnclave/GrapheneEnclave_u.h Enclave3/Enclave3_u.h
+App/%.o: App/%.cpp MasterEnclave/MasterEnclave_u.h GrapheneEnclave/GrapheneEnclave_u.h
 	@$(CXX) $(App_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(App_Name): App/MasterEnclave_u.o App/GrapheneEnclave_u.o App/Enclave3_u.o $(App_Cpp_Objects) $(UnTrustLib_Name)
+$(App_Name): App/MasterEnclave_u.o App/GrapheneEnclave_u.o $(App_Cpp_Objects) $(UnTrustLib_Name)
 	@$(CXX) $^ -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
