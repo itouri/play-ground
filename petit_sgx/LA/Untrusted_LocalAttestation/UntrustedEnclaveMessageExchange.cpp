@@ -45,27 +45,8 @@ ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 {
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
-	uint32_t temp_enclave_no;
 
-	std::map<sgx_enclave_id_t, uint32_t>::iterator it = g_enclave_id_map.find(dest_enclave_id);
-    if(it != g_enclave_id_map.end())
-	{
-		temp_enclave_no = it->second;
-	}
-    else
-	{
-		return INVALID_SESSION;
-	}
-
-	switch(temp_enclave_no)
-	{
-		case 1:
-			ret = MasterEnclave_session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
-			break;
-		//case 2:
-		//	ret = Enclave2_session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
-		//	break;
-	}
+	ret = MasterEnclave_session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	
@@ -77,27 +58,9 @@ ATTESTATION_STATUS exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 {
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
-	uint32_t temp_enclave_no;
 
-	std::map<sgx_enclave_id_t, uint32_t>::iterator it = g_enclave_id_map.find(dest_enclave_id);
-    if(it != g_enclave_id_map.end())
-	{
-		temp_enclave_no = it->second;
-	}
-    else
-	{
-		return INVALID_SESSION;
-	}
 
-	switch(temp_enclave_no)
-	{
-		case 1:
-			ret = MasterEnclave_exchange_report(dest_enclave_id, &status, src_enclave_id, dh_msg2, dh_msg3, session_id);
-			break;
-		//case 2:
-		//	ret = Enclave2_exchange_report(dest_enclave_id, &status, src_enclave_id, dh_msg2, dh_msg3, session_id);
-		//	break;
-	}
+	ret = MasterEnclave_exchange_report(dest_enclave_id, &status, src_enclave_id, dh_msg2, dh_msg3, session_id);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	
@@ -110,27 +73,8 @@ ATTESTATION_STATUS send_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_encla
 {
 	uint32_t status = 0;
     sgx_status_t ret = SGX_SUCCESS;
-	uint32_t temp_enclave_no;
 
-	std::map<sgx_enclave_id_t, uint32_t>::iterator it = g_enclave_id_map.find(dest_enclave_id);
-    if(it != g_enclave_id_map.end())
-	{
-		temp_enclave_no = it->second;
-	}
-    else
-	{
-		return INVALID_SESSION;
-	}
-
-	switch(temp_enclave_no)
-	{
-		case 1:
-			ret = MasterEnclave_generate_response(dest_enclave_id, &status, src_enclave_id, req_message, req_message_size, max_payload_size, resp_message, resp_message_size);
-			break;
-		//case 2:
-		//	ret = Enclave2_generate_response(dest_enclave_id, &status, src_enclave_id, req_message, req_message_size, max_payload_size, resp_message, resp_message_size);
-		//	break;
-	}
+	ret = MasterEnclave_generate_response(dest_enclave_id, &status, src_enclave_id, req_message, req_message_size, max_payload_size, resp_message, resp_message_size);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	
@@ -143,27 +87,8 @@ ATTESTATION_STATUS end_session_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclav
 {
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
-	uint32_t temp_enclave_no;
 
-	std::map<sgx_enclave_id_t, uint32_t>::iterator it = g_enclave_id_map.find(dest_enclave_id);
-    if(it != g_enclave_id_map.end())
-	{
-		temp_enclave_no = it->second;
-	}
-    else
-	{
-		return INVALID_SESSION;
-	}
-
-	switch(temp_enclave_no)
-	{
-		case 1:
-			ret = MasterEnclave_end_session(dest_enclave_id, &status, src_enclave_id);
-			break;
-		//case 2:
-		//	ret = Enclave2_end_session(dest_enclave_id, &status, src_enclave_id);
-		//	break;
-	}
+	ret = MasterEnclave_end_session(dest_enclave_id, &status, src_enclave_id);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	

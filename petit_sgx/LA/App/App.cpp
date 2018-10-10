@@ -54,8 +54,8 @@ extern std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
 sgx_enclave_id_t master_enclave_id = 0;
 sgx_enclave_id_t graphene_enclave_id = 0;
 
-#define MASTER_ENC_PATH "libMasterEnclave.so"
-#define GRAPHENE_ENC_PATH "libGrapheneEnclave.so"
+#define MASTER_ENC_PATH "libMasterenclave.so"
+#define GRAPHENE_ENC_PATH "libGrapheneenclave.so"
 
 void waitForKeyPress()
 {
@@ -106,9 +106,10 @@ int _tmain(int argc, _TCHAR* argv[])
         printf("\nLoad Enclave Failure");
     }
 
-    printf("\nAvailable Enclaves");
+    printf("\nAvailable Enclaves\n");
     printf("\master enclave - EnclaveID %" PRIx64, master_enclave_id);
     printf("\ngraphene enclave - EnclaveID %" PRIx64, graphene_enclave_id);
+    printf("\n");
     
     do
     {
