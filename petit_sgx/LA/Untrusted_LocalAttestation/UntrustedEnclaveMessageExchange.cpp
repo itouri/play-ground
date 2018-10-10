@@ -37,6 +37,8 @@
 #include "UntrustedEnclaveMessageExchange.h"
 #include "sgx_dh.h"
 #include <map>
+#include <string.h>
+
 
 std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
 
@@ -94,4 +96,14 @@ ATTESTATION_STATUS end_session_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclav
 	else	
 	    return INVALID_SESSION;
 
+}
+
+void print_ocall(unsigned char *str)
+{
+	int i;
+	int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
+	for(i = 0; i < size; ++i) {
+		printf("%x ",str[i]);
+	}
+	printf("\nsize: %d\n", strlen((const char*)str));
 }

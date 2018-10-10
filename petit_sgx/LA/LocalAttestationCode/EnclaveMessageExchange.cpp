@@ -138,6 +138,9 @@ ATTESTATION_STATUS create_session(sgx_enclave_id_t src_enclave_id,
         return status;
     }
 
+    // MasterEncの処理 送られて来たMRENCLAVEが正しいgrapheneのものか
+    print_ocall((unsigned char*)&dh_msg3.msg3_body.report.body.mr_enclave);
+
     // Verify the identity of the destination enclave
     if(verify_peer_enclave_trust(&responder_identity) != SUCCESS)
     {
@@ -255,8 +258,11 @@ ATTESTATION_STATUS exchange_report(sgx_enclave_id_t src_enclave_id,
             break;
         }
 
-		//TASK MRENCAVE�̌���
+        //TASK grapheneが検証 MRENCAVEが master enclave のものか？
 		// initiator_identity.mr_enclave != mr_enclave
+        // mr_enclaveのサイズが全然違う
+        print_ocall((unsigned char*)&dh_msg2->report.body.mr_enclave);
+        //
 
         //Verify source enclave's trust
           if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)
