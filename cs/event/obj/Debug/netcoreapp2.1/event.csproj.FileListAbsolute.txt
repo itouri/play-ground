@@ -1,0 +1,11 @@
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\bin\Debug\netcoreapp2.1\event.deps.json
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\bin\Debug\netcoreapp2.1\event.runtimeconfig.json
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\bin\Debug\netcoreapp2.1\event.runtimeconfig.dev.json
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\bin\Debug\netcoreapp2.1\event.dll
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\bin\Debug\netcoreapp2.1\event.pdb
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\obj\Debug\netcoreapp2.1\event.csprojAssemblyReference.cache
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\obj\Debug\netcoreapp2.1\event.csproj.CoreCompileInputs.cache
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\obj\Debug\netcoreapp2.1\event.AssemblyInfoInputs.cache
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\obj\Debug\netcoreapp2.1\event.AssemblyInfo.cs
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\obj\Debug\netcoreapp2.1\event.dll
+C:\Users\akiyama_k\Documents\git\play-ground\cs\event\obj\Debug\netcoreapp2.1\event.pdb

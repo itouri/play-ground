@@ -169,5 +169,4 @@ onload = function(){
         // 生成した VBO を返して終了
         return vbo;
     }
-
 };
