@@ -49,7 +49,7 @@ static uint32_t e2_foo1_wrapper(ms_in_msg_exchange_t *ms, size_t param_lenth, ch
 
 //Function pointer table containing the list of functions that the enclave exposes
 const struct {
-    size_t num_funcs;
+    size_t num_funcs; 
     const void* table[1];
 } func_table = {
     1,
