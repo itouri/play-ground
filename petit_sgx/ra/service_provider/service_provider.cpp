@@ -108,7 +108,7 @@ static bool g_is_sp_registered = false;
 static int g_sp_credentials = 0;
 static int g_authentication_token = 0;
 
-uint8_t g_secret[8] = {1,2,3,4,5,6,7,8};
+uint8_t g_secret[8] = {0,1,2,3,4,5,6,7};
 
 sample_spid_t g_spid;
 
@@ -719,6 +719,32 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
                         NULL,
                         0,
                         &p_att_result_msg->secret.payload_tag);
+
+            int i;
+            for (i=0; i < 8; i++) {
+                printf("%u", g_secret[i]);
+            }
+            printf("\n");
+
+            for (i=0; i < 8; i++) {
+                g_secret[i] = 9;
+            }
+
+            // 自分自身で decrypt
+            ret = sgx_rijndael128GCM_decrypt(&g_sp_db.sk_key,
+                        p_att_result_msg->secret.payload,
+                        p_att_result_msg->secret.payload_size,
+                        &g_secret[0],
+                        &aes_gcm_iv[0],
+                        SAMPLE_SP_IV_SIZE,
+                        NULL,
+                        0,
+                        &p_att_result_msg->secret.payload_tag);
+
+            for (i=0; i < 8; i++) {
+                printf("%u", g_secret[i]);
+            }
+            printf("\n");
         }
     }while(0);
 
