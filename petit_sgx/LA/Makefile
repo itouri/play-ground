@@ -292,7 +292,7 @@ MasterEnclave/%.o: MasterEnclave/%.cpp MasterEnclave/MasterEnclave_t.h
 	@echo "CXX  <=  $<"
 
 MasterEnclave.so: MasterEnclave/MasterEnclave_t.o $(Enclave_Cpp_Objects_1) $(Trust_Lib_Name)
-	@$(CXX) MasterEnclave/MasterEnclave_t.o $(Enclave_Cpp_Objects_1) -o $@ $(MasterEnclave_Link_Flags)
+	@$(CXX) -g MasterEnclave/MasterEnclave_t.o $(Enclave_Cpp_Objects_1) -o $@ $(MasterEnclave_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Enclave_Name_1): MasterEnclave.so
@@ -312,7 +312,7 @@ GrapheneEnclave/%.o: GrapheneEnclave/%.cpp
 	@echo "CXX  <=  $<"
 
 GrapheneEnclave.so: GrapheneEnclave/GrapheneEnclave_t.o $(Enclave_Cpp_Objects_2) $(Trust_Lib_Name)
-	@$(CXX) GrapheneEnclave/GrapheneEnclave_t.o $(Enclave_Cpp_Objects_2) -o $@ $(GrapheneEnclave_Link_Flags)
+	@$(CXX) -g GrapheneEnclave/GrapheneEnclave_t.o $(Enclave_Cpp_Objects_2) -o $@ $(GrapheneEnclave_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Enclave_Name_2): GrapheneEnclave.so

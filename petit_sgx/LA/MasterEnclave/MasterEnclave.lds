@@ -1,4 +1,4 @@
-Enclave1.so
+MestereEclave.so
 {
     global:
         g_global_data_sim;

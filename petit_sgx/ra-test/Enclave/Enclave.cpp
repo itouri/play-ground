@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,27 +30,31 @@
  */
 
 
-#include "datatypes.h"
-#include "sgx_eid.h"
-#include "sgx_trts.h"
-#include <map>
-#include "dh_session_protocol.h"
+#include <stdarg.h>
+#include <stdio.h>      /* vsnprintf */
 
-#ifndef LOCALATTESTATION_H_
-#define LOCALATTESTATION_H_
+#include "Enclave.h"
+#include "Enclave_t.h"  /* print_string */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* 
+ * printf: 
+ *   Invokes OCALL to display the enclave buffer to the terminal.
+ */
 
-uint32_t SGXAPI create_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, dh_session_t *p_session_info);
-uint32_t SGXAPI send_request_receive_response(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, dh_session_t *p_session_info, char *inp_buff, size_t inp_buff_len, size_t max_out_buff_size, char **out_buff, size_t* out_buff_len);
-uint32_t SGXAPI close_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
-
-void printe(char *str);
-
-#ifdef __cplusplus
+void ecall_read_file_test(){
+    
 }
-#endif
 
-#endif
+void ecall_test() {
+    printf("OK!\n");
+}
+
+void printf(const char *fmt, ...)
+{
+    char buf[BUFSIZ] = {'\0'};
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, BUFSIZ, fmt, ap);
+    va_end(ap);
+    ocall_print_string(buf);
+}

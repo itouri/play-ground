@@ -135,70 +135,79 @@ int _tmain(int argc, _TCHAR* argv[])
             }
         }
 
-        //Test Enclave to Enclave call between Enclave1(Source) and Enclave2(Destination)
-        status = MasterEnclave_test_enclave_to_enclave_call(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        // //Test Enclave to Enclave call between Enclave1(Source) and Enclave2(Destination)
+        // status = MasterEnclave_test_enclave_to_enclave_call(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        // if (status!=SGX_SUCCESS)
+        // {
+        //     printf("Enclave1_test_enclave_to_enclave_call Ecall failed: Error code is %x", status);
+        //     break;
+        // }
+        // else
+        // {
+        //     if(ret_status==0)
+        //     {
+        //         printf("\n\nEnclave to Enclave Call between Source (E1) and Destination (E2) Enclaves successful !!!");
+        //     }
+        //     else
+        //     {
+        //         printf("\n\nEnclave to Enclave Call failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
+        //         break;
+        //     }
+        // }
+        // //Test message exchange between Enclave1(Source) and Enclave2(Destination)
+        // status = MasterEnclave_test_message_exchange(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        // if (status!=SGX_SUCCESS)
+        // {
+        //     printf("Enclave1_test_message_exchange Ecall failed: Error code is %x", status);
+        //     break;
+        // }
+        // else
+        // {
+        //     if(ret_status==0)
+        //     {
+        //         printf("\n\nMessage Exchange between Source (E1) and Destination (E2) Enclaves successful !!!");
+        //     }
+        //     else
+        //     {
+        //         printf("\n\nMessage Exchange failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
+        //         break;
+        //     }
+        // }
+
+        status = GrapheneEnclave_test_enclave_to_enclave_call(graphene_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
         if (status!=SGX_SUCCESS)
         {
-            printf("Enclave1_test_enclave_to_enclave_call Ecall failed: Error code is %x", status);
+            printf("GrapheneEnclave_test_enclave_to_enclave_call failed: Error code is %x", status);
             break;
-        }
-        else
-        {
-            if(ret_status==0)
-            {
-                printf("\n\nEnclave to Enclave Call between Source (E1) and Destination (E2) Enclaves successful !!!");
-            }
-            else
-            {
-                printf("\n\nEnclave to Enclave Call failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
-                break;
-            }
-        }
-        //Test message exchange between Enclave1(Source) and Enclave2(Destination)
-        status = MasterEnclave_test_message_exchange(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
-        if (status!=SGX_SUCCESS)
-        {
-            printf("Enclave1_test_message_exchange Ecall failed: Error code is %x", status);
-            break;
-        }
-        else
-        {
-            if(ret_status==0)
-            {
-                printf("\n\nMessage Exchange between Source (E1) and Destination (E2) Enclaves successful !!!");
-            }
-            else
-            {
-                printf("\n\nMessage Exchange failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
-                break;
-            }
         }
 
-        //Test Closing Session between Enclave1(Source) and Enclave2(Destination)
-        status = MasterEnclave_test_close_session(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
-        if (status!=SGX_SUCCESS)
-        {
-            printf("Enclave1_test_close_session Ecall failed: Error code is %x", status);
-            break;
-        }
-        else
-        {
-            if(ret_status==0)
-            {
-                printf("\n\nClose Session between Source (E1) and Destination (E2) Enclaves successful !!!");
-            }
-            else
-            {
-                printf("\n\nClose session failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
-                break;
-            }
-        }
+        printf("ret: %x", ret_status);
+
+        // //Test Closing Session between Enclave1(Source) and Enclave2(Destination)
+        // status = MasterEnclave_test_close_session(master_enclave_id, &ret_status, master_enclave_id, graphene_enclave_id);
+        // if (status!=SGX_SUCCESS)
+        // {
+        //     printf("Enclave1_test_close_session Ecall failed: Error code is %x", status);
+        //     break;
+        // }
+        // else
+        // {
+        //     if(ret_status==0)
+        //     {
+        //         printf("\n\nClose Session between Source (E1) and Destination (E2) Enclaves successful !!!");
+        //     }
+        //     else
+        //     {
+        //         printf("\n\nClose session failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
+        //         break;
+        //     }
+        // }
     }while(0);
+
+    waitForKeyPress();
 
     sgx_destroy_enclave(master_enclave_id);
     sgx_destroy_enclave(graphene_enclave_id);
-
-    waitForKeyPress();
 
     return 0;
 }

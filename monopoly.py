@@ -5,21 +5,21 @@ _player_name = []
 _player_vlaue = []
 _longest_name_len = 0
 
-_undo_player_vlaue = []
+_memento = []
 
 def undo():
     global _player_vlaue
-    global _undo_player_vlaue
-    if (len(_undo_player_vlaue) == 0):
+    global _memento
+    if (len(_memento) == 0):
         print("undo only once")
         return
-    _player_vlaue = deepcopy(_undo_player_vlaue)
-    _undo_player_vlaue = []
+    _player_vlaue = deepcopy(_memento)
+    _memento = []
     
 def push_pv():
     global _player_vlaue
-    global _undo_player_vlaue
-    _undo_player_vlaue = deepcopy(_player_vlaue)
+    global _memento
+    _memento = deepcopy(_player_vlaue)
 
 def display_status():
     print()

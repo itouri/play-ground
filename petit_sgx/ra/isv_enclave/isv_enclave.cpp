@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -216,14 +216,13 @@ sgx_status_t enclave_init_ra(
     int b_pse,
     sgx_ra_context_t *p_context)
 {
-    // PSE -> 時間計測などを行うEnclave
     // isv enclave call to trusted key exchange library.
     sgx_status_t ret;
     if(b_pse)
     {
         int busy_retry_times = 2;
         do{
-            ret = sgx_create_pse_session(); // PSEを使用するための手順１
+            ret = sgx_create_pse_session();
         }while (ret == SGX_ERROR_BUSY && busy_retry_times--);
         if (ret != SGX_SUCCESS)
             return ret;
@@ -231,11 +230,11 @@ sgx_status_t enclave_init_ra(
 #ifdef SUPPLIED_KEY_DERIVATION
     ret = sgx_ra_init_ex(&g_sp_pub_key, b_pse, key_derivation, p_context);
 #else
-    ret = sgx_ra_init(&g_sp_pub_key, b_pse, p_context); // PSEを使用するための手順２
+    ret = sgx_ra_init(&g_sp_pub_key, b_pse, p_context);
 #endif
     if(b_pse)
     {
-        sgx_close_pse_session(); // PSEを使用するための手順３
+        sgx_close_pse_session();
         return ret;
     }
     return ret;

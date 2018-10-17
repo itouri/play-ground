@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
 
         p_msg0_full = (ra_samp_request_header_t*)
             malloc(sizeof(ra_samp_request_header_t)
-            +sizeof(uint32_t)); // ここにepidが入る これが body?
+            +sizeof(uint32_t));
         if (NULL == p_msg0_full)
         {
             ret = -1;
@@ -289,7 +289,6 @@ int main(int argc, char* argv[])
             }
             fprintf(OUTPUT, "\nCall sgx_create_enclave success.");
 
-            // enclave領域とRAServerで鍵を交換するためにPSEなどを設定
             ret = enclave_init_ra(enclave_id,
                                   &status,
                                   false,
@@ -368,7 +367,6 @@ int main(int argc, char* argv[])
 
         if(ret != 0 || !p_msg2_full)
         {
-            // msg2についての処理
             fprintf(OUTPUT, "\nError, ra_network_send_receive for msg1 failed "
                             "[%s].", __FUNCTION__);
             if(VERIFICATION_INDEX_IS_VALID())
@@ -395,7 +393,7 @@ int main(int argc, char* argv[])
                          msg2_full_size);
 
                 PRINT_BYTE_ARRAY(OUTPUT, p_msg2_full,
-                                 (uint32_t)sizeof(ra_samp_response_header_t)
+                                 sizeof(ra_samp_response_header_t)
                                  + p_msg2_full->size);
             }
             else
@@ -427,7 +425,7 @@ int main(int argc, char* argv[])
             fprintf(OUTPUT, "\nSent MSG1 to remote attestation service "
                             "provider. Received the following MSG2:\n");
             PRINT_BYTE_ARRAY(OUTPUT, p_msg2_full,
-                             (uint32_t)sizeof(ra_samp_response_header_t)
+                             sizeof(ra_samp_response_header_t)
                              + p_msg2_full->size);
 
             fprintf(OUTPUT, "\nA more descriptive representation of MSG2:\n");
@@ -435,7 +433,6 @@ int main(int argc, char* argv[])
 
             if( VERIFICATION_INDEX_IS_VALID() )
             {
-                // msg2のベリファイ
                 // The response should match the precomputed MSG2:
                 ra_samp_response_header_t* precomputed_msg2 =
                     (ra_samp_response_header_t *)
@@ -449,7 +446,7 @@ int main(int argc, char* argv[])
                                     "value for MSG2 does NOT match.\n");
                     fprintf(OUTPUT, "\nPrecomputed value for MSG2:\n");
                     PRINT_BYTE_ARRAY(OUTPUT, precomputed_msg2,
-                                     (uint32_t)sizeof(ra_samp_response_header_t)
+                                     sizeof(ra_samp_response_header_t)
                                      + precomputed_msg2->size);
                     fprintf(OUTPUT, "\nA more descriptive representation "
                                     "of precomputed value for MSG2:\n");
@@ -496,8 +493,8 @@ int main(int argc, char* argv[])
             {
                 ret = sgx_ra_proc_msg2(context,
                                    enclave_id,
-                                   sgx_ra_proc_msg2_trusted, // edger8rの関数へのポインタ
-                                   sgx_ra_get_msg3_trusted, // edger8rの関数へのポインタ
+                                   sgx_ra_proc_msg2_trusted,
+                                   sgx_ra_get_msg3_trusted,
                                    p_msg2_body,
                                    p_msg2_full->size,
                                    &p_msg3,

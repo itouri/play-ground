@@ -1,4 +1,4 @@
-Enclave2.so
+GraphenEenclave.so
 {
     global:
         g_global_data_sim;

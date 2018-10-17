@@ -136,6 +136,8 @@ uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id,
         return ke_status;
     }
 
+    printe("ddd");
+
     SAFE_FREE(marshalled_inp_buff);
     SAFE_FREE(out_buff);
     SAFE_FREE(retval);

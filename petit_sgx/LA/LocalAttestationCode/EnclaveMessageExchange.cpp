@@ -139,7 +139,7 @@ ATTESTATION_STATUS create_session(sgx_enclave_id_t src_enclave_id,
     }
 
     // MasterEncの処理 送られて来たMRENCLAVEが正しいgrapheneのものか
-    print_ocall((unsigned char*)&dh_msg3.msg3_body.report.body.mr_enclave);
+    print_ocall((char*)&dh_msg3.msg3_body.report.body.mr_enclave);
 
     // Verify the identity of the destination enclave
     if(verify_peer_enclave_trust(&responder_identity) != SUCCESS)
@@ -261,7 +261,7 @@ ATTESTATION_STATUS exchange_report(sgx_enclave_id_t src_enclave_id,
         //TASK grapheneが検証 MRENCAVEが master enclave のものか？
 		// initiator_identity.mr_enclave != mr_enclave
         // mr_enclaveのサイズが全然違う
-        print_ocall((unsigned char*)&dh_msg2->report.body.mr_enclave);
+        print_ocall((char*)&dh_msg2->report.body.mr_enclave);
         //
 
         //Verify source enclave's trust
@@ -702,7 +702,6 @@ ATTESTATION_STATUS end_session(sgx_enclave_id_t src_enclave_id)
 
 }
 
-
 //Returns a new sessionID for the source destination session
 ATTESTATION_STATUS generate_session_id(uint32_t *session_id)
 {
@@ -725,5 +724,8 @@ ATTESTATION_STATUS generate_session_id(uint32_t *session_id)
     status = NO_AVAILABLE_SESSION_ERROR;
 
     return status;
+}
 
+void printe(char *str) {
+    print_ocall(str);
 }

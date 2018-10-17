@@ -39,6 +39,8 @@
 #include "sgx_dh.h"
 #include <map>
 
+#include "sgx_utils.h"
+
 #define UNUSED(val) (void)(val)
 
 std::map<sgx_enclave_id_t, dh_session_t>g_src_session_info_map;
@@ -56,6 +58,30 @@ const struct {
     }
 };
 
+uint32_t get_mrenclave()
+{
+    sgx_report_t report;
+    sgx_status_t ret;
+
+    //printe("begin sgx_create_report\n");
+    ret = sgx_create_report(NULL, NULL, &report);
+    if ( ret != SGX_SUCCESS )
+    {
+        printe("failed sgx_create_report\n");
+        return ret;
+    }
+
+    // ret = sgx_verify_report(&report);
+    // if ( ret != SGX_SUCCESS )
+    // {
+    //     printe("failed sgx_verify_report\n");
+    //     return ret;
+    // }
+
+    //printe("begin printe\n");
+    printe((char*)&report.body.mr_enclave);
+}
+
 //Makes use of the sample code function to establish a secure channel with the destination enclave
 uint32_t test_create_session(sgx_enclave_id_t src_enclave_id,
                           sgx_enclave_id_t dest_enclave_id)
@@ -70,76 +96,82 @@ uint32_t test_create_session(sgx_enclave_id_t src_enclave_id,
         g_src_session_info_map.insert(std::pair<sgx_enclave_id_t, dh_session_t>(dest_enclave_id, dest_session_info));
     }
     memset(&dest_session_info, 0, sizeof(dh_session_t));
+    printe("aaa");
     return ke_status;
 }
 
-//Makes use of the sample code function to do an enclave to enclave call (Test Vector)
-uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id,
-                                          sgx_enclave_id_t dest_enclave_id)
+uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id)
 {
-    ATTESTATION_STATUS ke_status = SUCCESS;
-    param_struct_t *p_struct_var, struct_var;
-    uint32_t target_fn_id, msg_type;
-    char* marshalled_inp_buff;
-    size_t marshalled_inp_buff_len;
-    char* out_buff;
-    size_t out_buff_len;
-    dh_session_t *dest_session_info;
-    size_t max_out_buff_size;
-    char* retval;
-
-    max_out_buff_size = 50;
-    target_fn_id = 0;
-    msg_type = ENCLAVE_TO_ENCLAVE_CALL;
-
-    struct_var.var1 = 0x3;
-    struct_var.var2 = 0x4;
-    p_struct_var = &struct_var;
-
-    //Marshals the input parameters for calling function foo1 in Enclave3 into a input buffer
-    ke_status = marshal_input_parameters_e3_foo1(target_fn_id, msg_type, p_struct_var, &marshalled_inp_buff, &marshalled_inp_buff_len);
-    if(ke_status != SUCCESS)
-    {
-        return ke_status;
-    }
-
-    //Search the map for the session information associated with the destination enclave id passed in
-    std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_src_session_info_map.find(dest_enclave_id);
-    if(it != g_src_session_info_map.end())
-    {
-         dest_session_info = &it->second;
-    }
-    else
-    {
-        SAFE_FREE(marshalled_inp_buff);
-        return INVALID_SESSION;
-    }
-
-    //Core Reference Code function
-    ke_status = send_request_receive_response(src_enclave_id, dest_enclave_id, dest_session_info, marshalled_inp_buff,
-                                               marshalled_inp_buff_len, max_out_buff_size, &out_buff, &out_buff_len);
-
-    if(ke_status != SUCCESS)
-    {
-        SAFE_FREE(marshalled_inp_buff);
-        SAFE_FREE(out_buff);
-        return ke_status;
-    }
-
-    //Un-marshal the return value and output parameters from foo1 of Enclave3
-    ke_status = unmarshal_retval_and_output_parameters_e3_foo1(out_buff, p_struct_var, &retval);
-    if(ke_status != SUCCESS)
-    {
-        SAFE_FREE(marshalled_inp_buff);
-        SAFE_FREE(out_buff);
-        return ke_status;
-    }
-
-    SAFE_FREE(marshalled_inp_buff);
-    SAFE_FREE(out_buff);
-    SAFE_FREE(retval);
-    return SUCCESS;
+    return get_mrenclave();
 }
+
+// //Makes use of the sample code function to do an enclave to enclave call (Test Vector)
+// uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id,
+//                                           sgx_enclave_id_t dest_enclave_id)
+// {
+//     ATTESTATION_STATUS ke_status = SUCCESS;
+//     param_struct_t *p_struct_var, struct_var;
+//     uint32_t target_fn_id, msg_type;
+//     char* marshalled_inp_buff;
+//     size_t marshalled_inp_buff_len;
+//     char* out_buff;
+//     size_t out_buff_len;
+//     dh_session_t *dest_session_info;
+//     size_t max_out_buff_size;
+//     char* retval;
+
+//     max_out_buff_size = 50;
+//     target_fn_id = 0;
+//     msg_type = ENCLAVE_TO_ENCLAVE_CALL;
+
+//     struct_var.var1 = 0x3;
+//     struct_var.var2 = 0x4;
+//     p_struct_var = &struct_var;
+
+//     //Marshals the input parameters for calling function foo1 in Enclave3 into a input buffer
+//     ke_status = marshal_input_parameters_e3_foo1(target_fn_id, msg_type, p_struct_var, &marshalled_inp_buff, &marshalled_inp_buff_len);
+//     if(ke_status != SUCCESS)
+//     {
+//         return ke_status;
+//     }
+
+//     //Search the map for the session information associated with the destination enclave id passed in
+//     std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_src_session_info_map.find(dest_enclave_id);
+//     if(it != g_src_session_info_map.end())
+//     {
+//          dest_session_info = &it->second;
+//     }
+//     else
+//     {
+//         SAFE_FREE(marshalled_inp_buff);
+//         return INVALID_SESSION;
+//     }
+
+//     //Core Reference Code function
+//     ke_status = send_request_receive_response(src_enclave_id, dest_enclave_id, dest_session_info, marshalled_inp_buff,
+//                                                marshalled_inp_buff_len, max_out_buff_size, &out_buff, &out_buff_len);
+
+//     if(ke_status != SUCCESS)
+//     {
+//         SAFE_FREE(marshalled_inp_buff);
+//         SAFE_FREE(out_buff);
+//         return ke_status;
+//     }
+
+//     //Un-marshal the return value and output parameters from foo1 of Enclave3
+//     ke_status = unmarshal_retval_and_output_parameters_e3_foo1(out_buff, p_struct_var, &retval);
+//     if(ke_status != SUCCESS)
+//     {
+//         SAFE_FREE(marshalled_inp_buff);
+//         SAFE_FREE(out_buff);
+//         return ke_status;
+//     }
+
+//     SAFE_FREE(marshalled_inp_buff);
+//     SAFE_FREE(out_buff);
+//     SAFE_FREE(retval);
+//     return SUCCESS;
+// }
 
 //Makes use of the sample code function to do a generic secret message exchange (Test Vector)
 uint32_t test_message_exchange(sgx_enclave_id_t src_enclave_id,
