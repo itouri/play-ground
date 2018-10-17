@@ -44,6 +44,8 @@
 #include <string.h>
 #include "ias_ra.h"
 
+#include "crypto.h"
+
 #ifndef SAFE_FREE
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr) = NULL;}}
 #endif
@@ -106,7 +108,7 @@ static bool g_is_sp_registered = false;
 static int g_sp_credentials = 0;
 static int g_authentication_token = 0;
 
-uint8_t g_secret[8] = {0,1,2,3,4,5,6,7};
+uint8_t g_secret[8] = {1,2,3,4,5,6,7,8};
 
 sample_spid_t g_spid;
 
@@ -708,7 +710,7 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
            (IAS_PSE_OK == attestation_report.pse_status) &&
            (isv_policy_passed == true))
         {
-            ret = sample_rijndael128GCM_encrypt(&g_sp_db.sk_key,
+            ret = sgx_rijndael128GCM_encrypt(&g_sp_db.sk_key,
                         &g_secret[0],
                         p_att_result_msg->secret.payload_size,
                         p_att_result_msg->secret.payload,

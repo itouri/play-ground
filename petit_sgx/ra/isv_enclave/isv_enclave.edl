@@ -50,4 +50,7 @@ enclave {
                                             [in,count=16] uint8_t* gcm_mac);
     };
 
+    untrusted {
+        void print_ocall([in, string]char *str, size_t size);
+    };
 };

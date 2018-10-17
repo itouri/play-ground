@@ -377,11 +377,14 @@ sgx_status_t put_secret_data(
         bool secret_match = true;
         for(i=0;i<secret_size;i++)
         {
-            if(g_secret[i] != i)
+            if(g_secret[i] != i+1)
             {
                 secret_match = false;
             }
         }
+
+        print_ocall((char*)&g_secret, sizeof g_secret /sizeof g_secret[0]);
+        print_ocall("OK!!!!", 0);
 
         if(!secret_match)
         {
