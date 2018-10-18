@@ -22,6 +22,8 @@ int main (void)
     char imd_key[16] = "abxsabxsabxsabx";
     unsigned char *iv = {0}; // 16Byte
 
+    // from_file -> 
+
     uuid_generate(imd.cliend_id);
     uint8_t mr[32] = {0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7};
     memcpy(&imd.mr_enclave, mr, sizeof(uint8_t)*32);
