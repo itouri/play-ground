@@ -240,3 +240,38 @@ int key_load_file (EVP_PKEY **key, const char *filename, int keytype)
 
 	return (error_type == e_none);
 }
+
+int sha256_digest(const unsigned char *msg, size_t mlen, unsigned char digest[32])
+{
+	EVP_MD_CTX *ctx;
+
+	error_type= e_none;
+
+	memset(digest, 0, 32);
+
+	ctx = EVP_MD_CTX_create(); 
+	//ctx= EVP_MD_CTX_new(); これでは動かない
+	if ( ctx == NULL ) {
+		error_type= e_crypto;
+		goto cleanup;
+	}
+
+	if ( EVP_DigestInit(ctx, EVP_sha256()) != 1 ) {
+		error_type= e_crypto;
+		goto cleanup;
+	}
+
+	if ( EVP_DigestUpdate(ctx, msg, mlen) != 1 ) {
+		error_type= e_crypto;
+		goto cleanup;
+	}
+
+	if ( EVP_DigestFinal(ctx, digest, NULL) != 1 ) {
+		error_type= e_crypto;
+		goto cleanup;
+	}
+
+cleanup:
+	if ( ctx != NULL ) EVP_MD_CTX_destroy(ctx);
+	return ( error_type == e_none );
+}

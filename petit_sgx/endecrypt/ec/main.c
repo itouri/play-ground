@@ -385,7 +385,6 @@ int own_test()
     
     int ret;
     ret = RAND_bytes(req_data->nonce, sizeof req_data->nonce);
-    ret = RAND_bytes(req_data->mac, sizeof req_data->mac);
     unsigned long err = ERR_get_error();
     if(ret != 1) {
         /* RAND_bytes failed */
@@ -418,6 +417,19 @@ int own_test()
         return 1;
     }
 
+    dec_req_data_t *dec_req_data;
+    dec_req_data = (dec_req_data_t*)malloc(sizeof(dec_req_data_t));
+    memcpy(&dec_req_data->req_data, req_data, sizeof(req_data_t));
+
+    // hashを計算して追加
+    ret = sha256_digest(&dec_req_data->req_data, sizeof(req_data_t), dec_req_data->digest);
+    // TODO 1なら success?
+    if (!ret) {
+        printf("failed sha256_digest");
+        return 1;
+    }
+
+
     /* 暗号化 */
     unsigned char *enc_data;
     int enc_len = 0;
@@ -428,15 +440,32 @@ int own_test()
     }
 
     /* 復号化 */
-    req_data_t *deced_req_data;
+    dec_req_data_t *deced_dec_req_data;
     int dec_len = 0;
-    dec_len = elgamal_decrypt(&deced_req_data, enc_data, enc_len, test_pub_key);
+    dec_len = elgamal_decrypt(&deced_dec_req_data, enc_data, enc_len, test_pub_key);
     if (!dec_len) {
         printf("Decrypt error\n");
 		return 1;
     }
 
-    ret = memcmp(req_data, deced_req_data, sizeof(req_data_t));
+    // 復号化した構造体のhashを計算して正しいか比較
+    unsigned char digest[32];
+    ret = sha256_digest((const unsigned char*)&deced_dec_req_data->req_data, sizeof(req_data_t), digest);
+    // TODO 1なら success?
+    if (!ret) {
+        printf("failed sha256_digest");
+        return 1;
+    }
+
+    // hashを比較
+    ret = memcmp(digest, deced_dec_req_data->digest, sizeof(digest));
+    if (!ret) {
+        printf("hash is worng\n");
+        return 1;
+    }
+
+    // 最初の構造体と同じになっているか比較
+    ret = memcmp(dec_req_data, deced_dec_req_data, sizeof(req_data_t));
     if (!ret) {
         printf("failed memcmp\n");
         return 1;
