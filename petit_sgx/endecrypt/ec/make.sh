@@ -1,0 +1,1 @@
+gcc -g *.c -o main -I/opt/openssl/1.1.0i/include/ -L/opt/openssl/1.1.0i/lib/ -luuid -lssl -lcrypto

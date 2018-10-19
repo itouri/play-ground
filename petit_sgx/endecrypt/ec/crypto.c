@@ -40,23 +40,23 @@ static enum _error_type {
 
 static const char *ep= NULL;
 
-void crypto_init ()
-{
-	/* Load error strings for libcrypto */
-	ERR_load_crypto_strings();
+// void crypto_init ()
+// {
+// 	/* Load error strings for libcrypto */
+// 	ERR_load_crypto_strings();
 
-	/* Load digest and ciphers */
-	OpenSSL_add_all_algorithms();
-}
+// 	/* Load digest and ciphers */
+// 	OpenSSL_add_all_algorithms();
+// }
 
-void crypto_destroy ()
-{
-	EVP_cleanup();
+// void crypto_destroy ()
+// {
+// 	EVP_cleanup();
 
-	CRYPTO_cleanup_all_ex_data();
+// 	CRYPTO_cleanup_all_ex_data();
 
-	ERR_free_strings();
-}
+// 	ERR_free_strings();
+// }
 
 /* Print the error */
 
@@ -249,8 +249,8 @@ int sha256_digest(const unsigned char *msg, size_t mlen, unsigned char digest[32
 
 	memset(digest, 0, 32);
 
-	ctx = EVP_MD_CTX_create(); 
-	//ctx= EVP_MD_CTX_new(); これでは動かない
+	//ctx = EVP_MD_CTX_create(); 
+	ctx = EVP_MD_CTX_new(); //これでは動かない
 	if ( ctx == NULL ) {
 		error_type= e_crypto;
 		goto cleanup;
@@ -272,6 +272,6 @@ int sha256_digest(const unsigned char *msg, size_t mlen, unsigned char digest[32
 	}
 
 cleanup:
-	if ( ctx != NULL ) EVP_MD_CTX_destroy(ctx);
+	if ( ctx != NULL ) EVP_MD_CTX_free(ctx);
 	return ( error_type == e_none );
 }

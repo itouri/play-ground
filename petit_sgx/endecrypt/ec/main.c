@@ -13,6 +13,7 @@
 #include <openssl/rand.h>
 #include <openssl/obj_mac.h>
 #include <openssl/evp.h>
+#include <openssl/bn.h>
 
 #include "crypto.h"
 #include "message.h"
@@ -60,11 +61,10 @@ elgamal_encrypt(byte **encData, byte *data, int dataLen, const EC_KEY *eckey)
 	p = BN_new();
 	ctx = BN_CTX_new();
 	EC_GROUP_get_curve_GFp(group, p, NULL, NULL, ctx);
-#ifdef DEBUG
-	printf(" p = ");
-	BN_print_fp(stdout, p);
-	puts("");
-#endif
+
+	// printf(" p = ");
+	// BN_print_fp(stdout, p);
+	// puts("");
 
 	/* C1 = r*G */
 	C1 = EC_POINT_new(group);
@@ -78,11 +78,9 @@ elgamal_encrypt(byte **encData, byte *data, int dataLen, const EC_KEY *eckey)
 			return 0;
 		}
 	} while (BN_is_zero(r));
-#ifdef DEBUG
-	printf(" r = ");
-	BN_print_fp(stdout, r);
-	puts("");
-#endif
+	// printf(" r = ");
+	// BN_print_fp(stdout, r);
+	// puts("");
 
 	EC_POINT_mul(group, C1, r, NULL, NULL, ctx);
 
@@ -91,6 +89,7 @@ elgamal_encrypt(byte **encData, byte *data, int dataLen, const EC_KEY *eckey)
 	BN_bin2bn(data, dataLen, m);
 	rv = EC_POINT_set_compressed_coordinates_GFp(group, M, m, 1, ctx);
 	if (!rv) {
+		printf("error EC_POINT_set_compressed_coordinates_GFp");
 		return 0;
 	}
 
@@ -103,14 +102,10 @@ elgamal_encrypt(byte **encData, byte *data, int dataLen, const EC_KEY *eckey)
 	/* cipher text C = (C1, C2) */ 
 	c1Len = EC_POINT_point2oct(group, C1, POINT_CONVERSION_COMPRESSED,
 							   NULL, 0, ctx);
-#ifdef DEBUG
 	printf(" Point converted length (C1) = %d\n", c1Len);
-#endif
 	c2Len =	EC_POINT_point2oct(group, C2, POINT_CONVERSION_COMPRESSED,
 							   NULL, 0, ctx);
-#ifdef DEBUG
 	printf(" Point converted length (C2) = %d\n", c1Len);
-#endif
 	*encData = OPENSSL_malloc(c1Len + c2Len);
 	EC_POINT_point2oct(group, C1, POINT_CONVERSION_COMPRESSED,
 							*encData, c1Len, ctx);
@@ -159,7 +154,7 @@ elgamal_decrypt(byte **decData, byte *encData, int encLen, const EC_KEY *eckey)
 #endif
 	rv = EC_POINT_oct2point(group, C1, encData, encLen / 2, ctx);
 	if (!rv) {
-		fprintf(stderr, "EC_POINT_oct2point error (C1)\n");
+		printf("EC_POINT_oct2point error (C1)\n");
 		return 0;
 	}
 
@@ -170,7 +165,7 @@ elgamal_decrypt(byte **decData, byte *encData, int encLen, const EC_KEY *eckey)
 	rv = EC_POINT_oct2point(group, C2, encData + encLen / 2, encLen / 2,
 							ctx);
 	if (!rv) {
-		fprintf(stderr, "EC_POINT_oct2point error (C2)\n");
+		printf("EC_POINT_oct2point error (C2)\n");
 		return 0;
 	}
 	Tmp = EC_POINT_new(group);
@@ -381,6 +376,7 @@ int own_test()
     }
 
     req_data_t *req_data;
+	req_data = (req_data_t*)malloc(sizeof(req_data_t));
     uuid_generate(req_data->client_id);
     
     int ret;
@@ -429,12 +425,11 @@ int own_test()
         return 1;
     }
 
-
     /* 暗号化 */
     unsigned char *enc_data;
     int enc_len = 0;
     enc_len = elgamal_encrypt(&enc_data, (unsigned char*)req_data, sizeof req_data, test_prv_key);
-    if (!enc_len) {
+    if (enc_len==0) {
         printf("Encrypt error\n");
 		return 1;
     }

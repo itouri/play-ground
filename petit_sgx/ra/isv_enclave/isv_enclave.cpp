@@ -36,6 +36,8 @@
 #include "sgx_tcrypto.h"
 #include "string.h"
 
+#include "ecrypto.h"
+
 // This is the public EC key of the SP. The corresponding private EC key is
 // used by the SP to sign data used in the remote attestation SIGMA protocol
 // to sign channel binding data in MSG2. A successful verification of the
@@ -322,6 +324,12 @@ sgx_status_t verify_att_result_mac(sgx_ra_context_t context,
 }
 
 
+// encrypt
+
+
+// decrypt
+
+
 // Generate a secret information for the SP encrypted with SK.
 // Input pointers aren't checked since the trusted stubs copy
 // them into EPC memory.
@@ -390,6 +398,9 @@ sgx_status_t put_secret_data(
         {
             ret = SGX_ERROR_UNEXPECTED;
         }
+
+        // 鍵を使った encrypt / decrypt 処理
+
 
         // Once the server has the shared secret, it should be sealed to
         // persistent storage for future use. This will prevents having to

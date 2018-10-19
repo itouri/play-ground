@@ -227,8 +227,9 @@ isv_app/isv_enclave_u.o: isv_app/isv_enclave_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
+App_SSL_Flags := -L$(SGXSSL_UNTRUSTED_LIB_PATH) -lsgx_usgxssl
 isv_app/%.o: isv_app/%.cpp
-	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
+	@$(CXX) $(App_SSL_Flags) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 $(App_Name): isv_app/isv_enclave_u.o $(App_Cpp_Objects)
@@ -236,7 +237,6 @@ $(App_Name): isv_app/isv_enclave_u.o $(App_Cpp_Objects)
 	@echo "LINK =>  $@"
 
 ######## Service Provider Objects ########
-
 
 service_provider/%.o: service_provider/%.cpp
 	@$(CXX) $(ServiceProvider_Cpp_Flags) -c $< -o $@
@@ -249,15 +249,16 @@ libservice_provider.so: $(ServiceProvider_Cpp_Objects)
 ######## Enclave Objects ########
 
 isv_enclave/isv_enclave_t.c: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
-	@cd isv_enclave && $(SGX_EDGER8R) --trusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include
+	@cd isv_enclave && $(SGX_EDGER8R) --trusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include --search-path /home/akiyama/git/intel-sgx-ssl/Linux/package/include
 	@echo "GEN  =>  $@"
 
+Enclave_SSL_Flags := -Wl,--whole-archive -lsgx_tsgxssl -Wl,--no-whole-archive -lsgx_tsgxssl_crypto -lsgx_tsetjmp -include "tsgxsslio.h"
 isv_enclave/isv_enclave_t.o: isv_enclave/isv_enclave_t.c
-	@$(CC) $(Enclave_C_Flags) -c $< -o $@
+	@$(CC) $(Enclave_SSL_Flags) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 isv_enclave/%.o: isv_enclave/%.cpp
-	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
+	@$(CXX) -L$(SGXSSL_TRUSTED_LIB_PATH) -I$(SGXSSL_INCLUDE_PATH) -I $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 $(Enclave_Name): isv_enclave/isv_enclave_t.o $(Enclave_Cpp_Objects)
