@@ -36,6 +36,17 @@ SGX_MODE ?= HW
 SGX_ARCH ?= x64
 SGX_DEBUG ?= 1
 
+######## Set ENV ########
+ROOT_DIR = /home/akiyama/git/intel-sgx-ssl/Linux/sgx
+export PACKAGE_LIB := $(ROOT_DIR)/../package/lib64/
+export PACKAGE_INC := $(ROOT_DIR)/../package/include/
+export TRUSTED_LIB_DIR := $(ROOT_DIR)/libsgx_tsgxssl/
+export UNTRUSTED_LIB_DIR := $(ROOT_DIR)/libsgx_usgxssl/
+# export OS_ID=0 #なにこれ
+export LINUX_SGX_BUILD ?= 0
+export TRUSTED_LIB := libsgx_tsgxssl.a
+export UNTRUSTED_LIB := libsgx_usgxssl.a
+
 ifeq ($(shell getconf LONG_BIT), 32)
 	SGX_ARCH := x86
 else ifeq ($(findstring -m32, $(CXXFLAGS)), -m32)
@@ -60,25 +71,45 @@ $(error Cannot set SGX_DEBUG and SGX_PRERELEASE at the same time!!)
 endif
 endif
 
+
+
 ifeq ($(SGX_DEBUG), 1)
         SGX_COMMON_CFLAGS += -O0 -g
+		SGXSSL_TLibrary_Name := sgx_tsgxssl
+		SGXSSL_ULibrary_Name := sgx_usgxssl
+		OpenSSL_Crypto_TLibrary_Name := sgx_tsgxssl_crypto
 else
         SGX_COMMON_CFLAGS += -O2
+		SGXSSL_TLibrary_Name := sgx_tsgxssl
+		SGXSSL_ULibrary_Name := sgx_usgxssl
+		OpenSSL_Crypto_TLibrary_Name := sgx_tsgxssl_crypto
 endif
 
 ifeq ($(SUPPLIED_KEY_DERIVATION), 1)
         SGX_COMMON_CFLAGS += -DSUPPLIED_KEY_DERIVATION
 endif
+
+ifneq ($(SGX_MODE), HW)
+	UaeService_Library_Name := sgx_uae_service_sim
+else
+	UaeService_Library_Name := sgx_uae_service
+endif
+
+
 ######## App Settings ########
 
 ifneq ($(SGX_MODE), HW)
 	Urts_Library_Name := sgx_urts_sim
+	Trts_Library_Name := sgx_trts_sim
+	Service_Library_Name := sgx_tservice_sim
 else
 	Urts_Library_Name := sgx_urts
+	Trts_Library_Name := sgx_trts
+	Service_Library_Name := sgx_tservice
 endif
 
 App_Cpp_Files := isv_app/isv_app.cpp
-App_Include_Paths := -Iservice_provider -I$(SGX_SDK)/include
+App_Include_Paths := -Iservice_provider  -I$(SGX_SDK)/include
 
 App_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -95,13 +126,8 @@ else
 endif
 
 App_Cpp_Flags := $(App_C_Flags) -std=c++11
-App_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lpthread -lservice_provider -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR) -lssl -lcrypto
-
-ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_uae_service_sim
-else
-	App_Link_Flags += -lsgx_uae_service
-endif
+App_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lpthread -lservice_provider -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR)
+App_Link_Flags += -lssl -lcrypto
 
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
@@ -138,8 +164,27 @@ ifeq ($(CC_BELOW_4_9), 1)
 else
 	Enclave_C_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections -fstack-protector-strong
 endif
+
+Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
+
+Enclave_Name := isv_enclave.so
+Signed_Enclave_Name := isv_enclave.signed.so
+Enclave_Config_File := isv_enclave/isv_enclave.config.xml
+
+######## For SSL ########
+#TSETJMP_LIB := -lsgx_tsetjmp #sgxsdkが1.9以上だけ必要
+OPENSSL_LIBRARY_PATH := $(PACKAGE_LIB)
+
+Enclave_Include_Paths += -I. -I$(STL_PORT_INC)/stlport -I$(PACKAGE_INC) -I./isv_enclave
+Common_Enclave_Flags := -nostdinc -fvisibility=hidden -fpic -fpie -fstack-protector -fno-builtin-printf -Wformat -Wformat-security $(Enclave_Include_Paths) -include "tsgxsslio.h"
+
 Enclave_C_Flags += $(Enclave_Include_Paths)
 Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++
+
+SgxSSL_TLink_Libraries :=  -L$(OPENSSL_LIBRARY_PATH) -Wl,--whole-archive -l$(SGXSSL_TLibrary_Name) -Wl,--no-whole-archive \
+						  -l$(OpenSSL_Crypto_TLibrary_Name)
+
+Security_Link_Flags := -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -pie
 
 # To generate a proper enclave, it is recommended to follow below guideline to link the trusted libraries:
 #    1. Link sgx_trts with the `--whole-archive' and `--no-whole-archive' options,
@@ -148,19 +193,21 @@ Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++
 #       Use `--start-group' and `--end-group' to link these libraries.
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
-Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
+
+Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
+	$(Security_Link_Flags) \
+	$(SgxSSL_TLink_Libraries) -L$(SGX_LIBRARY_PATH) \
 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
-	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -lsgx_tkey_exchange -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
+	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -lsgx_tkey_exchange -l$(Crypto_Library_Name) $(TSETJMP_LIB) -l$(Service_Library_Name) -Wl,--end-group \
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
-	-Wl,--version-script=isv_enclave/isv_enclave.lds
+	-Wl,--version-script=isv_enclave/isv_enclave.lds \
 
-Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
-
-Enclave_Name := isv_enclave.so
-Signed_Enclave_Name := isv_enclave.signed.so
-Enclave_Config_File := isv_enclave/isv_enclave.config.xml
+SGX_SHARED_LIB_FLAG := -Wl,-rpath,${SGX_LIBRARY_PATH}
+SgxSSL_ULink_Libraries := sgx_usgxssl
+App_Link_Flags += $(Security_Link_Flags) -L$(OPENSSL_LIBRARY_PATH) -l$(SgxSSL_ULink_Libraries) # -l$(Urts_Library_Name) 
+# $(SGX_SHARED_LIB_FLAG) こいつだ でもなんでこいつの優先度がそんな高いんだ？
 
 ifeq ($(SGX_MODE), HW)
 ifeq ($(SGX_DEBUG), 1)
@@ -220,20 +267,19 @@ endif
 ######## App Objects ########
 
 isv_app/isv_enclave_u.c: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
-	@cd isv_app && $(SGX_EDGER8R) --untrusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include
+	@cd isv_app && $(SGX_EDGER8R) --untrusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include --search-path $(PACKAGE_INC)
 	@echo "GEN  =>  $@"
 
 isv_app/isv_enclave_u.o: isv_app/isv_enclave_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-App_SSL_Flags := -L$(SGXSSL_UNTRUSTED_LIB_PATH) -lsgx_usgxssl
 isv_app/%.o: isv_app/%.cpp
-	@$(CXX) $(App_SSL_Flags) $(App_Cpp_Flags) -c $< -o $@
+	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 $(App_Name): isv_app/isv_enclave_u.o $(App_Cpp_Objects)
-	@$(CXX) $^ -o $@ $(App_Link_Flags)
+	@$(CXX) $^ -o $@ -L/usr/lib -lsgx_uae_service_sim $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 ######## Service Provider Objects ########
@@ -249,16 +295,15 @@ libservice_provider.so: $(ServiceProvider_Cpp_Objects)
 ######## Enclave Objects ########
 
 isv_enclave/isv_enclave_t.c: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
-	@cd isv_enclave && $(SGX_EDGER8R) --trusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include --search-path /home/akiyama/git/intel-sgx-ssl/Linux/package/include
+	@cd isv_enclave && $(SGX_EDGER8R) --trusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include --search-path $(PACKAGE_INC)
 	@echo "GEN  =>  $@"
 
-Enclave_SSL_Flags := -Wl,--whole-archive -lsgx_tsgxssl -Wl,--no-whole-archive -lsgx_tsgxssl_crypto -lsgx_tsetjmp -include "tsgxsslio.h"
 isv_enclave/isv_enclave_t.o: isv_enclave/isv_enclave_t.c
-	@$(CC) $(Enclave_SSL_Flags) $(Enclave_C_Flags) -c $< -o $@
+	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 isv_enclave/%.o: isv_enclave/%.cpp
-	@$(CXX) -L$(SGXSSL_TRUSTED_LIB_PATH) -I$(SGXSSL_INCLUDE_PATH) -I $(Enclave_Cpp_Flags) -c $< -o $@
+	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 $(Enclave_Name): isv_enclave/isv_enclave_t.o $(Enclave_Cpp_Objects)
