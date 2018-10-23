@@ -74,7 +74,8 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
-App_Cpp_Files := App/App.cpp $(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
+App_C_Files := App/crypto.c App/hexutil.c App/ucrypto.c
+App_Cpp_Files := App/App.cpp #$(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
 App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include
 
 App_C_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths)
@@ -100,6 +101,7 @@ else
 	App_Link_Flags += -lsgx_uae_service
 endif
 
+App_C_Objects := $(App_C_Files:.c=.o)
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
 App_Name := app
@@ -135,13 +137,13 @@ Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++
 #       Use `--start-group' and `--end-group' to link these libraries.
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
-Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
-	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
-	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
-	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
-	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
-	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
-	-Wl,--version-script=Enclave/Enclave.lds
+# Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
+# 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
+# 	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
+# 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+# 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
+# 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
+# 	-Wl,--version-script=Enclave/Enclave.lds
 
 Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
 
@@ -199,10 +201,75 @@ ifneq ($(Build_Mode), HW_RELEASE)
 	@echo "RUN  =>  $(App_Name) [$(SGX_MODE)|$(SGX_ARCH), OK]"
 endif
 
+######## For SSL ########
+ROOT_DIR = /home/akiyama/git/intel-sgx-ssl/Linux/sgx
+export PACKAGE_LIB := $(ROOT_DIR)/../package/lib64
+export PACKAGE_INC := $(ROOT_DIR)/../package/include
+export TRUSTED_LIB_DIR := $(ROOT_DIR)/libsgx_tsgxssl
+export UNTRUSTED_LIB_DIR := $(ROOT_DIR)/libsgx_usgxssl
+# export OS_ID=0 #なにこれ
+export LINUX_SGX_BUILD ?= 0
+export TRUSTED_LIB := libsgx_tsgxssl.a
+export UNTRUSTED_LIB := libsgx_usgxssl.a
+
+SGXSSL_TLibrary_Name := sgx_tsgxssl
+SGXSSL_ULibrary_Name := sgx_usgxssl
+OpenSSL_Crypto_TLibrary_Name := sgx_tsgxssl_crypto
+
+ifneq ($(SGX_MODE), HW)
+	UaeService_Library_Name := sgx_uae_service_sim
+else
+	UaeService_Library_Name := sgx_uae_service
+endif
+
+ifneq ($(SGX_MODE), HW)
+	Trts_Library_Name := sgx_trts_sim
+	Service_Library_Name := sgx_tservice_sim
+else
+	Trts_Library_Name := sgx_trts
+	Service_Library_Name := sgx_tservice
+endif
+Crypto_Library_Name := sgx_tcrypto
+
+OPENSSL_LIBRARY_PATH := $(PACKAGE_LIB)
+
+SgxSSL_TLink_Libraries :=  -L$(OPENSSL_LIBRARY_PATH) -Wl,--whole-archive -l$(SGXSSL_TLibrary_Name) -Wl,--no-whole-archive \
+						  -l$(OpenSSL_Crypto_TLibrary_Name)
+
+# これを入れるとキャストに関してエラーになる
+Security_Link_Flags := -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -pie
+
+# Enclave_Link_Flags += $(Security_Link_Flags) $(SgxSSL_TLink_Libraries)\
+# 	-lsgx_tkey_exchange \
+
+SgxSSL_ULink_Libraries := sgx_usgxssl
+App_Link_Flags += $(Security_Link_Flags) -L$(OPENSSL_LIBRARY_PATH) -l$(SgxSSL_ULink_Libraries) \
+				-I/opt/openssl/1.1.0i/include/ -L/opt/openssl/1.1.0i/lib/ -lssl -lcrypto -luuid
+
+Enclave_Include_Paths += -I. -I$(STL_PORT_INC)/stlport -I$(PACKAGE_INC) -I./isv_enclave
+Enclave_C_Flags += $(Enclave_Include_Paths)
+Enclave_Cpp_Flags += $(Enclave_Include_Paths)
+
+U_SEARCH_PATH = --search-path $(PACKAGE_INC)
+T_SEARCH_PATH = --search-path $(PACKAGE_INC)
+
+Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
+	$(Security_Link_Flags) \
+	$(SgxSSL_TLink_Libraries) -L$(SGX_LIBRARY_PATH) \
+	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
+	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -lsgx_tkey_exchange -l$(Crypto_Library_Name) $(TSETJMP_LIB) -l$(Service_Library_Name) -Wl,--end-group \
+	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
+	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
+	-Wl,--version-script=Enclave/Enclave.lds
+
 ######## App Objects ########
+App/%.o: App/%.c
+	@$(CC) $(App_C_Flags) -c $< -o $@
+	@echo "CC  <=  $<"
 
 App/Enclave_u.c: $(SGX_EDGER8R) Enclave/Enclave.edl
-	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include
+	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include $(U_SEARCH_PATH)
 	@echo "GEN  =>  $@"
 
 App/Enclave_u.o: App/Enclave_u.c
@@ -213,18 +280,18 @@ App/%.o: App/%.cpp
 	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(App_Name): App/Enclave_u.o $(App_Cpp_Objects)
+$(App_Name): App/Enclave_u.o $(App_Cpp_Objects) $(App_C_Objects)
 	@$(CXX) $^ -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 .config_$(Build_Mode)_$(SGX_ARCH):
-	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*
+	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_C_Objects) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*
 	@touch .config_$(Build_Mode)_$(SGX_ARCH)
 
 ######## Enclave Objects ########
 
 Enclave/Enclave_t.c: $(SGX_EDGER8R) Enclave/Enclave.edl
-	@cd Enclave && $(SGX_EDGER8R) --trusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include
+	@cd Enclave && $(SGX_EDGER8R) --trusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include $(T_SEARCH_PATH)
 	@echo "GEN  =>  $@"
 
 Enclave/Enclave_t.o: Enclave/Enclave_t.c
@@ -246,4 +313,4 @@ $(Signed_Enclave_Name): $(Enclave_Name)
 .PHONY: clean
 
 clean:
-	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*
+	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) App/*.o $(App_Cpp_Objects) $(App_C_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*

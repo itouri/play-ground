@@ -42,7 +42,13 @@
 #include "App.h"
 #include "Enclave_u.h"
 
-#include "fileio.h"
+#include "crypto.h"
+#include "message.h"
+#include "ucrypto.h"
+
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <uuid/uuid.h>
 
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;
@@ -52,6 +58,13 @@ typedef struct _sgx_errlist_t {
     const char *msg;
     const char *sug; /* Suggestion */
 } sgx_errlist_t;
+
+EVP_PKEY *test_prv_pkey;
+EVP_PKEY *test_pub_pkey;
+
+// 読んだ鍵
+EC_KEY *test_prv_key;
+//EC_KEY *test_pub_key;
 
 /* Error code returned by sgx_create_enclave */
 static sgx_errlist_t sgx_errlist[] = {
@@ -131,6 +144,94 @@ static sgx_errlist_t sgx_errlist[] = {
         NULL
     },
 };
+
+// TODO
+int elgamal_encrypt(unsigned char **encData, unsigned char *data, int dataLen, const EC_KEY *eckey) 
+{
+	BN_CTX *ctx = NULL;
+	BIGNUM *r = NULL, *p = NULL, *m;
+	EC_POINT *C1 = NULL, *C2 = NULL;
+	EC_POINT *Tmp = NULL, *M;
+	const EC_POINT *Pkey;
+	const EC_GROUP *group;
+	int    c1Len, c2Len;
+	int    rv;
+
+	if ((group = EC_KEY_get0_group(eckey)) == NULL) {
+		return 0;
+	}
+	p = BN_new();
+	ctx = BN_CTX_new();
+	EC_GROUP_get_curve_GFp(group, p, NULL, NULL, ctx);
+#ifdef DEBUG
+	printf(" p = ");
+	BN_print_fp(stdout, p);
+	puts("");
+#endif
+
+	/* C1 = r*G */
+	C1 = EC_POINT_new(group);
+
+	/* generate random number r */ 
+	r = BN_new();
+	M = EC_POINT_new(group);
+	m = BN_new();
+	do {
+		if (!BN_rand_range(r, p)) {
+			return 0;
+		}
+	} while (BN_is_zero(r));
+#ifdef DEBUG
+	printf(" r = ");
+	BN_print_fp(stdout, r);
+	puts("");
+#endif
+
+	EC_POINT_mul(group, C1, r, NULL, NULL, ctx);
+
+	/* C2 = r*P + M */ 
+	/* M */
+	BN_bin2bn(data, dataLen, m);
+	rv = EC_POINT_set_compressed_coordinates_GFp(group, M, m, 1, ctx);
+	if (!rv) {
+		return 0;
+	}
+
+	C2 = EC_POINT_new(group);
+	Tmp = EC_POINT_new(group);
+	Pkey = EC_KEY_get0_public_key(eckey);
+	EC_POINT_mul(group, Tmp, NULL, Pkey, r, ctx);
+	EC_POINT_add(group, C2, Tmp, M, ctx);
+
+	/* cipher text C = (C1, C2) */ 
+	c1Len = EC_POINT_point2oct(group, C1, POINT_CONVERSION_COMPRESSED,
+							   NULL, 0, ctx);
+#ifdef DEBUG
+	printf(" Point converted length (C1) = %d\n", c1Len);
+#endif
+	c2Len =	EC_POINT_point2oct(group, C2, POINT_CONVERSION_COMPRESSED,
+							   NULL, 0, ctx);
+#ifdef DEBUG
+	printf(" Point converted length (C2) = %d\n", c1Len);
+#endif
+	*encData = (unsigned char*)OPENSSL_malloc(c1Len + c2Len);
+	EC_POINT_point2oct(group, C1, POINT_CONVERSION_COMPRESSED,
+							*encData, c1Len, ctx);
+	EC_POINT_point2oct(group, C2, POINT_CONVERSION_COMPRESSED,
+							*encData + c1Len, c2Len, ctx);
+
+	BN_clear_free(p);
+	BN_clear_free(r);
+	BN_clear_free(m);
+	EC_POINT_free(C1);
+	EC_POINT_free(C2);
+	EC_POINT_free(M);
+	EC_POINT_free(Tmp);
+	BN_CTX_free(ctx);
+
+	return (c1Len + c2Len);
+}
+
 
 /* Check error conditions for loading enclave */
 void print_error_message(sgx_status_t ret)
@@ -231,6 +332,35 @@ void ocall_print_string(const char *str)
     printf("%s", str);
 }
 
+int read_ec_keys(){
+
+    const char *prv_file_path = "ec-key.pem";
+    if (!key_load_file(&test_prv_pkey, prv_file_path, KEY_PRIVATE)) {
+        printf("can't load key private key file: %s\n", prv_file_path);
+        return -1;
+    }
+
+    const char *pub_file_path = "ec-key-pub.pem";
+    if (!key_load_file(&test_pub_pkey, pub_file_path, KEY_PUBLIC)) {
+        printf("can't load key public key file: %s\n", pub_file_path);
+        return -1;
+    }
+
+    if ( (test_prv_key = EC_KEY_new()) == NULL ) {
+        printf("failed test_prv_key = EC_KEY_new()\n");
+        return -1;
+    }
+
+    // 読み込んだ鍵から EC_KEY を取り出す
+    test_prv_key = EVP_PKEY_get1_EC_KEY(test_prv_pkey);
+    if ( test_prv_key == NULL ) {
+        printf("cant read test_prv_key\n");
+        return -1;
+
+    }
+
+    return 0;
+}
 
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
@@ -245,15 +375,77 @@ int SGX_CDECL main(int argc, char *argv[])
         return -1; 
     }
 
-    // read key
+    /* read key */
+    if ( !read_ec_keys() ) {
+        return -1;
+    }
 
-    // file read
-    // enclaveが読み込むファイルはない
+    /* init req_data */
+    req_data_t *req_data;
+	req_data = (req_data_t*)malloc(sizeof(req_data_t));
+    uuid_generate(req_data->client_id);
+    
+    int ret;
+    ret = RAND_bytes(req_data->nonce, sizeof req_data->nonce);
+    unsigned long err = ERR_get_error();
+    if(ret != 1) {
+        /* RAND_bytes failed */
+        /* `err` is valid    */
+        printf("RAND_bytes is failed\n");
+        return 1;
+    }
 
-    // encrypt
+    /* int dec_req_data_t */
+    dec_req_data_t *dec_req_data;
+    dec_req_data = (dec_req_data_t*)malloc(sizeof(dec_req_data_t));
+    memcpy(&dec_req_data->req_data, req_data, sizeof(req_data_t));
 
+    // hashを計算して追加
+    ret = sha256_digest((const unsigned char*)&dec_req_data->req_data, sizeof(req_data_t), dec_req_data->digest);
+    // TODO 1なら success?
+    if (!ret) {
+        printf("failed sha256_digest");
+        return 1;
+    }
 
-    ecall_test(global_eid);
+    /* encrypt */
+    unsigned char *enc_data;
+    int enc_len = 0;
+    enc_len = elgamal_encrypt((unsigned char**)&enc_data, (unsigned char*)req_data, sizeof req_data, test_prv_key);
+    if (enc_len==0) {
+        printf("Encrypt error\n");
+		return 1;
+    }
+
+    dec_req_data_t *ret_dec_req_data;
+    ret_dec_req_data = (dec_req_data_t*)malloc(sizeof(dec_req_data_t));
+    // ecallで enc_dataを渡してしまう
+    //int sz = BN_num_bits( test_pub_key->group->p );
+    int sz = EVP_PKEY_size(test_pub_pkey);
+    ecall_test(global_eid, enc_data, enc_len, ret_dec_req_data, (unsigned char*)test_pub_pkey, sz);
+
+    // 復号化した構造体のhashを計算
+    unsigned char digest[32];
+    ret = sha256_digest((const unsigned char*)&ret_dec_req_data->req_data, sizeof(req_data_t), digest);
+    // TODO 1なら success?
+    if (!ret) {
+        printf("failed sha256_digest");
+        return 1;
+    }
+
+    // hashを比較
+    ret = memcmp(digest, ret_dec_req_data->digest, sizeof(digest));
+    if (!ret) {
+        printf("hash is worng\n");
+        return 1;
+    }
+
+    // 最初の構造体と同じになっているか比較
+    ret = memcmp(dec_req_data, ret_dec_req_data, sizeof(req_data_t));
+    if (!ret) {
+        printf("failed memcmp\n");
+        return 1;
+    }    
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);
@@ -265,11 +457,11 @@ int SGX_CDECL main(int argc, char *argv[])
     return 0;
 }
 
-// localfileのread
-int read_file_ocall(unsigned char *dest, char *file, off_t *len) {
-	if ( !from_file(dest, file ,len) ) {
-		// error
-		fprintf(stderr, "failed read_file_ocall()\n");
-		return 1;
-	}
-}
+// // localfileのread
+// int read_file_ocall(unsigned char *dest, char *file, off_t *len) {
+// 	if ( !from_file(dest, file ,len) ) {
+// 		// error
+// 		fprintf(stderr, "failed read_file_ocall()\n");
+// 		return 1;
+// 	}
+// }

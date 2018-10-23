@@ -204,7 +204,7 @@ Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefau
 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
 	-Wl,--version-script=isv_enclave/isv_enclave.lds \
 
-SGX_SHARED_LIB_FLAG := -Wl,-rpath,${SGX_LIBRARY_PATH}
+# SGX_SHARED_LIB_FLAG := -Wl,-rpath,${SGX_LIBRARY_PATH}
 SgxSSL_ULink_Libraries := sgx_usgxssl
 App_Link_Flags += $(Security_Link_Flags) -L$(OPENSSL_LIBRARY_PATH) -l$(SgxSSL_ULink_Libraries) # -l$(Urts_Library_Name) 
 # $(SGX_SHARED_LIB_FLAG) こいつだ でもなんでこいつの優先度がそんな高いんだ？

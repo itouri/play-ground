@@ -33,7 +33,7 @@ int from_hexstring (unsigned char *dest, const void *vsrc, size_t len)
 #ifdef _WIN32
 		if ( sscanf_s(&src[i * 2], "%2xhh", &v) == 0 ) return 0;
 #else
-		if ( sscanf(&src[i*2], "%2xhh", &v) == 0 ) return 0;
+		if ( sscanf((const char*)&src[i*2], "%2xhh", &v) == 0 ) return 0;
 #endif
 		dest[i]= (unsigned char) v;
 	}
@@ -66,7 +66,7 @@ const char *hexstring (const void *vsrc, size_t len)
 	const unsigned char *src= (const unsigned char *) vsrc;
 	unsigned char *bp;
 
-	bsz= len*2+1;	/* Make room for NULL byte */
+	bsz= len*2+1;	/* Make room for NULL unsigned char */
 	if ( bsz >= _hex_buffer_size ) {
 		/* Allocate in 1K increments. Make room for the NULL byte. */
 		size_t newsz= 1024*(bsz/1024) + ((bsz%1024) ? 1024 : 0);
@@ -77,7 +77,7 @@ const char *hexstring (const void *vsrc, size_t len)
 		}
 	}
 
-	for(i= 0, bp= _hex_buffer; i< len; ++i) {
+	for(i= 0, bp= (unsigned char*)_hex_buffer; i< len; ++i) {
 		*bp= _hextable[src[i]>>4];
 		++bp;
 		*bp= _hextable[src[i]&0xf];

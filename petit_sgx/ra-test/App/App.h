@@ -45,7 +45,6 @@
 #include <sgx_utils.h>
 #include "uuid/uuid.h"
 
-
 #ifndef TRUE
 # define TRUE 1
 #endif

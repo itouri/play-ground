@@ -32,9 +32,13 @@
 /* Enclave.edl - Top EDL file. */
 
 enclave {
+    //from "sgx_tkey_exchange.edl" import *;
+    from "sgx_tsgxssl.edl" import *;
     
     include "user_types.h" /* buffer_t */
-    from "sgx_tsgxssl.edl" import *;
+    include "tmessage.h"
+    include "sgx_trts.h"
+    include "openssl/ec.h"
 
     /* Import ECALL/OCALL from sub-directory EDLs.
      *  [from]: specifies the location of EDL file. 
@@ -43,7 +47,7 @@ enclave {
      */
 
      trusted {
-         public void ecall_test();
+         public void ecall_test([in, string]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in]unsigned char* test_pub_pkey, int sz);
      };
 
     /* 
@@ -53,11 +57,6 @@ enclave {
      */
     untrusted {
         void ocall_print_string([in, string] const char *str);
-
-        int send_to_ras_ocall([in, out]char *src, size_t sz);
-		int recv_from_ras_ocall([in, out]char **dest, [in, out] size_t *sz);
-		int read_file_ocall([in, out]unsigned char *dest, [in, out]char *file, [in, out]off_t *len);
-		int run_graphene_vm_ocall([in, out]sgx_enclave_id_t *graphene_eid, [in, out]uuid_t *image_id);
     };
 
 };
