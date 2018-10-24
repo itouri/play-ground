@@ -413,6 +413,74 @@ int own_test()
         return 1;
     }
 
+	// i2o o2i no test
+	u_int8_t pub_size = i2d_PUBKEY(test_pub_pkey, NULL);
+    if(!pub_size){
+        printf("PUB KEY TO DATA ZERO\n"); 
+        return 1;
+    }
+
+	u_int8_t * pub_key = malloc(pub_size);
+	if ( !i2d_PUBKEY(test_pub_pkey, &pub_key) ) {
+        printf("i2d_PUBKEY(test_pub_pkey, &pub_key)\n"); 
+        return 1;
+    }
+
+	EVP_PKEY *opkey;
+	opkey = EVP_PKEY_new();
+	if(opkey == NULL){
+        printf("EVP_PKEY_new()\n"); 
+        return 1;
+    }
+
+	if(d2i_PUBKEY(&opkey, &pub_key, pub_size) != NULL){
+        printf("d2i_PUBKEY(&opkey, &pub_key, pub_size)\n"); 
+        return 1;
+    }
+
+	// EC_KEY * key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+	// if(!EC_KEY_generate_key(key)){
+    //     printf("GENERATE KEY FAIL\n"); 
+    //     return 1;
+    // }
+
+	// // i2o o2i no test
+	// u_int8_t pub_size = i2o_ECPublicKey(key, NULL);
+    // if(!pub_size){
+    //     printf("PUB KEY TO DATA ZERO\n"); 
+    //     return 1;
+    // }
+
+	// u_int8_t * pub_key = malloc(pub_size);
+	// //u_int8_t * ppub_key = pub_key;
+    // if(i2o_ECPublicKey(key, &pub_key) != pub_size){
+    //     printf("PUB KEY TO DATA FAIL\n"); 
+    //     return 1;
+    // }
+
+	/* EC_KEY_check_key failed: error:10067066:elliptic curve routines:ec_GFp_simple_oct2point:invalid encoding */
+
+	// EC_KEY *okey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+	// const unsigned char *opub_key_p = (const unsigned char*)pub_key;
+	// const unsigned char **opubkey_pp = &opub_key_p;
+
+	// int i;
+	// for (i=0; i < pub_size; i++) {
+	// 	printf("%x ", opub_key_p[i]);
+	// }
+	// printf("\n");
+
+	// EC_KEY_set_asn1_flag(okey, OPENSSL_EC_NAMED_CURVE);
+
+	// okey = o2i_ECPublicKey(&okey, opubkey_pp, pub_size);
+	// if (!EC_KEY_check_key(okey)) {
+	// 	printf("EC_KEY_check_key failed:\n");
+	// 	printf("%s\n", ERR_error_string(ERR_get_error(), NULL));
+	// }
+	// else {
+	// 	printf("Public key verified OK\n");
+	// }
+
     dec_req_data_t *dec_req_data;
     dec_req_data = (dec_req_data_t*)malloc(sizeof(dec_req_data_t));
     memcpy(&dec_req_data->req_data, req_data, sizeof(req_data_t));
