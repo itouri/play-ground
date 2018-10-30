@@ -60,6 +60,7 @@ const struct {
 uint32_t test_create_session(sgx_enclave_id_t src_enclave_id,
                          sgx_enclave_id_t dest_enclave_id)
 {
+    // LA
     ATTESTATION_STATUS ke_status = SUCCESS;
     dh_session_t dest_session_info;
 
