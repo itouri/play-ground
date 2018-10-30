@@ -11,6 +11,19 @@
 #include <netinet/in.h>
 #include <signal.h>
 
+#include "sgx_eid.h"
+
+#define FILE_PATH "./unix_domain.uds"
+
+void print_hex(uint8_t * data, size_t size) {
+    int i;
+    for (i=0; i < size; i++) {
+        printf("%c", data[i]);
+    }
+    printf("\n");
+}
+
+// https://qiita.com/methane/items/a467a28c8359b045a498
 int main()
 {
     int r;
@@ -22,7 +35,7 @@ int main()
     signal(SIGPIPE, SIG_IGN);
     listen_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     local.sun_family = AF_UNIX;
-    strcpy(local.sun_path, "test.uds");
+    strcpy(local.sun_path, FILE_PATH);
     unlink(local.sun_path);
     r = bind(listen_fd, (struct sockaddr *)&local, sizeof(local));
     if (r)
@@ -36,15 +49,30 @@ int main()
             perror("failed to accept");
             return 0;
         }
-        for (;;) {
-            int sent = write(remote_fd, buf, 20);
-            printf("sent %d bytes\n", sent);
-            if (sent < 0) {
-                printf("%d %s\n", errno, strerror(errno));
-                perror("fail to send");
-                close(remote_fd);
-                break;
-            }
+        sgx_enclave_id_t vm_enclave_id;
+        uint8_t * create_req;
+
+        uint8_t buf[1024]; //TODO サイズを決める
+        memset(buf, 0, sizeof buf);
+
+        int n;
+        n = read(remote_fd, buf, sizeof buf);
+        if (n < 0) {
+            perror("read length is zero");
+            return 1;
         }
+        memcpy(&vm_enclave_id, buf, sizeof(sgx_enclave_id_t));
+
+        int create_req_size = n - (sizeof(sgx_enclave_id_t));
+        create_req = (uint8_t*)malloc(create_req_size);
+        memcpy(create_req, (const void*)&buf[(sizeof(sgx_enclave_id_t))], create_req_size);
+
+        //print_hex(buf, n);
+        printf("sgx_enclave_id_t size: %ld\n create_req_size: %d\n", sizeof(sgx_enclave_id_t), create_req_size);
+        printf("sgx_enclave_id: %ld\n", vm_enclave_id);
+
+        print_hex((uint8_t*)&vm_enclave_id, sizeof(sgx_enclave_id_t));
+        print_hex(create_req, create_req_size);
     }
+    close(listen_fd); 
 }

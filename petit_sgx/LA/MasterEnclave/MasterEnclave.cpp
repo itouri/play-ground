@@ -54,7 +54,27 @@ const struct {
     {
         (const void*)e1_foo1_wrapper,
     }
-};
+}
+
+uint32_t la(sgx_enclave_id_t master_enclave_id,
+            sgx_enclave_id_t vm_enclave_id,
+            uint8_t * create_req_metadata,
+            size_t create_req_metadata_size) {
+    // test_create_session とほぼ同じ
+    ATTESTATION_STATUS ke_status = SUCCESS;
+    dh_session_t dest_session_info;
+
+    //Core reference code function for creating a session
+    ke_status = create_session(src_enclave_id, dest_enclave_id, &dest_session_info, create_req_metadata, create_req_metadata_size);
+
+    //Insert the session information into the map under the corresponding destination enclave id
+    if(ke_status == SUCCESS)
+    {
+        g_src_session_info_map.insert(std::pair<sgx_enclave_id_t, dh_session_t>(dest_enclave_id, dest_session_info));
+    }
+    memset(&dest_session_info, 0, sizeof(dh_session_t));
+    return ke_status;
+}
 
 //Makes use of the sample code function to establish a secure channel with the destination enclave (Test Vector)
 uint32_t test_create_session(sgx_enclave_id_t src_enclave_id,
@@ -136,8 +156,6 @@ uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id,
         SAFE_FREE(out_buff);
         return ke_status;
     }
-
-    printe("ddd");
 
     SAFE_FREE(marshalled_inp_buff);
     SAFE_FREE(out_buff);

@@ -71,9 +71,11 @@ std::map<sgx_enclave_id_t, dh_session_t>g_dest_session_info_map;
 //Create a session with the destination enclave
 ATTESTATION_STATUS create_session(sgx_enclave_id_t src_enclave_id,
                          sgx_enclave_id_t dest_enclave_id,
-                         dh_session_t *session_info)
+                         dh_session_t *session_info,
+                         uint8_t * create_req_metadata, // 追加
+                         size_t create_req_metadata_size) // 追加
 {
-    sgx_dh_msg1_t dh_msg1;            //Diffie-Hellman Message 1
+    sgx_dh_msg1_t dh_msg1;            //Diffie-Hellma                         n Message 1
     sgx_key_128bit_t dh_aek;        // Session Key
     sgx_dh_msg2_t dh_msg2;            //Diffie-Hellman Message 2
     sgx_dh_msg3_t dh_msg3;            //Diffie-Hellman Message 3
@@ -138,7 +140,14 @@ ATTESTATION_STATUS create_session(sgx_enclave_id_t src_enclave_id,
         return status;
     }
 
-    // MasterEncの処理 送られて来たMRENCLAVEが正しいgrapheneのものか
+    /*TODO MasterEncの処理 送られて来たMRENCLAVEが正しいgrapheneのものか検証 */
+    // create_metadataをras秘密鍵でdecode
+    // elgamal_encrypt()...
+    
+    // image_id, client_id, nonce のセットをrasに送って検証
+    // msgio->...
+
+    // create_req_metadata->mr_enclave と比較
     print_ocall((char*)&dh_msg3.msg3_body.report.body.mr_enclave);
 
     // Verify the identity of the destination enclave

@@ -59,6 +59,8 @@
 #define scanf_s scanf
 #define _tmain  main
 
+#define IMAGE_ID_SIZE 8
+
 extern std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
 
 
@@ -75,6 +77,18 @@ void waitForKeyPress()
     printf("\n\nHit a key....\n");
     temp = scanf_s("%c", &ch);
     (void) temp;
+}
+
+sgx_status_t create_enclave(const char * image_id, sgx_enclave_id_t * dest_enclave_id) {
+    int ret, launch_token_updated;
+    sgx_launch_token_t launch_token;
+    sgx_status_t ret;
+
+    // こういうことがしたい
+    enclave_file_path += IMG_PATH + image_id + "/enclave.so";
+
+    ret = sgx_create_enclave(enclave_file_path, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, dest_enclave_id, NULL);
+    return ret;
 }
 
 // 
@@ -104,8 +118,8 @@ void run_request_server() {
             perror("failed to accept");
             return 0;
         }
-        sgx_enclave_id_t vm_enclave_id;
-        uint8_t * create_req;
+        uint8_t image_id[IMAGE_ID_SIZE];
+        uint8_t * create_req_metadata;
 
         uint8_t buf[1024]; //TODO サイズを決める
         memset(buf, 0, sizeof buf);
@@ -117,11 +131,28 @@ void run_request_server() {
             return 1;
         }
 
-        memcpy(vm_enclave_id, buf, sizeof sgx_enclave_id_t);
+        sgx_enclave_id_t vm_enclave_id;
 
-        int create_req_size = n - (sizeof sgx_enclave_id_t);
-        create_req = (uint8_t*)malloc(create_req_size);
-        memcpy(create_req, buf+(sizeof sgx_enclave_id_t), create_req_size);
+        //memcpy(vm_enclave_id, buf, sizeof sgx_enclave_id_t); // enclave_idを受け取る必要はない
+        sgx_status_t status;
+        status = create_enclave(&image_id, );
+        if (status!=SGX_SUCCESS) {
+            printf("create_enclave Ecall failed: Error code is %x", status);
+            return -1;
+        }
+
+        int create_req_metadata_size = n - IMAGE_ID_SIZE;
+        create_req_metadata = (uint8_t*)malloc(create_req_metadata_size);
+        memcpy(create_req_metadata, &buf[IMAGE_ID_SIZE], create_req_metadata_size);
+
+        status = MasterEnclave_LA(
+            master_enclave_id, 
+            &ret_status,
+            master_enclave_id,
+            &vm_enclave_id,
+            create_req_metadata,
+            create_req_metadata_size
+        );
 
         status = MasterEnclave_test_create_session(master_enclave_id, &ret_status, master_enclave_id, vm_enclave_id);
         if (status!=SGX_SUCCESS) {
@@ -135,6 +166,7 @@ void run_request_server() {
                 break;
             }
         }
+        close(remote_fd);
     }
     close(listen_fd);
 }
