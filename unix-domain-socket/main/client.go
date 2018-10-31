@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/google/uuid"
 )
 
-type image_id_t [8]byte
+type image_id_t [16]byte
 
 const filePath = "../unix_domain.uds"
 
-func VMCreate(imageID string, createReqMetadata string) error {
+func VMCreate(imageID uuid.UUID, createReqMetadata []byte) error {
 	conn, err := net.Dial("unix", filePath)
 	if err != nil {
 		log.Printf("error: % \n", err)
@@ -18,13 +20,15 @@ func VMCreate(imageID string, createReqMetadata string) error {
 	}
 	defer conn.Close()
 
-	message := ""
+	hex, err := imageID.MarshalBinary()
+
+	//message := ""
 	// var eid uint64
 	// eid = 0x1
 	// eidStr := string([]byte(strconv.FormatUint(uint64(eid), 16)))
 
-	message += "00000001"
-	message += "that is collect !:)"
+	message := string(hex)
+	message += string(createReqMetadata)
 
 	_, err = conn.Write([]byte(message))
 	if err != nil {
@@ -42,10 +46,12 @@ func VMCreate(imageID string, createReqMetadata string) error {
 }
 
 func main() {
-	imageID := ""
-	createReqMetadata := ""
+	imageID := uuid.New()
+	createReqMetadata := "abcdefghijklmnopqrstuvxyz"
 
-	err := VMCreate(imageID, createReqMetadata)
+	fmt.Println(imageID.MarshalBinary())
+
+	err := VMCreate(imageID, []byte(createReqMetadata))
 	if err != nil {
 		fmt.Println(err.Error())
 	}
