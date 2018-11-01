@@ -16,7 +16,7 @@
 void print_hex(uint8_t * data, size_t size) {
     int i;
     for (i=0; i < size; i++) {
-        printf("%u ", data[i]);
+        printf("%x ", data[i]);
     }
     printf("\n");
 }
@@ -25,6 +25,7 @@ typedef uint8_t image_id_t[16];
 
 void serve(int remote_fd) {
     image_id_t image_id;
+    uint8_t * image_metadata;
     uint8_t * create_req_metadata;
 
     uint8_t buf[1024]; //TODO サイズを決める
@@ -38,15 +39,33 @@ void serve(int remote_fd) {
     }
     memcpy(&image_id, buf, sizeof(image_id_t));
 
-    int create_req_metadata_size = n - (sizeof(image_id_t));
+    size_t offset = (sizeof(image_id_t));
+
+    uint32_t image_metadata_size;
+    uint32_t create_req_metadata_size;
+
+    memcpy(&image_metadata_size, &buf[offset], sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+    memcpy(&create_req_metadata_size, &buf[offset], sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+
+    image_metadata = (uint8_t*)malloc(image_metadata_size);
+    memcpy(image_metadata, (const void*)&buf[offset], image_metadata_size);
+
+    offset += image_metadata_size;
+
     create_req_metadata = (uint8_t*)malloc(create_req_metadata_size);
-    memcpy(create_req_metadata, (const void*)&buf[(sizeof(image_id_t))], create_req_metadata_size);
+    memcpy(create_req_metadata, (const void*)&buf[offset], create_req_metadata_size);
 
     //print_hex(buf, n);
-    printf("image_id_t size: %ld\n create_req_metadata_size: %d\n", sizeof(image_id_t), create_req_metadata_size);
+    printf("image_id_t size: %ld\n", sizeof(image_id_t));
+    printf("image_metadata_size: %d\n", image_metadata_size);
+    printf("create_req_metadata_size: %d\n", create_req_metadata_size);
+
     //printf("sgx_enclave_id: %s\n", image_id);
 
     print_hex((uint8_t*)&image_id, sizeof(image_id_t));
+    print_hex(image_metadata, image_metadata_size);
     print_hex(create_req_metadata, create_req_metadata_size);
 }
 

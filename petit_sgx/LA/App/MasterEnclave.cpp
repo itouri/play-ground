@@ -79,15 +79,16 @@ void waitForKeyPress()
     (void) temp;
 }
 
-sgx_status_t create_enclave(const char * image_id, sgx_enclave_id_t * dest_enclave_id) {
+sgx_status_t create_enclave(const char * image_id, sgx_enclave_id_t * app_enclave_id) {
     int ret, launch_token_updated;
     sgx_launch_token_t launch_token;
     sgx_status_t ret;
 
-    // こういうことがしたい
-    enclave_file_path += IMG_PATH + image_id + "/enclave.so";
+    // golangを合わせる必要がある
+    const char * enclave_so_path = "./image";
+    enclave_file_path += IMG_PATH + image_id + "/emain.so";
 
-    ret = sgx_create_enclave(enclave_file_path, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, dest_enclave_id, NULL);
+    ret = sgx_create_enclave(enclave_file_path, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, app_enclave_id, NULL);
     return ret;
 }
 
@@ -119,6 +120,7 @@ void run_request_server() {
             return 0;
         }
         uint8_t image_id[IMAGE_ID_SIZE];
+        uint8_t * image_metadata;
         uint8_t * create_req_metadata;
 
         uint8_t buf[1024]; //TODO サイズを決める
@@ -131,11 +133,11 @@ void run_request_server() {
             return 1;
         }
 
-        sgx_enclave_id_t vm_enclave_id;
+        sgx_enclave_id_t app_enclave_id;
 
-        //memcpy(vm_enclave_id, buf, sizeof sgx_enclave_id_t); // enclave_idを受け取る必要はない
+        //memcpy(app_enclave_id, buf, sizeof sgx_enclave_id_t); // enclave_idを受け取る必要はない
         sgx_status_t status;
-        status = create_enclave(&image_id, );
+        status = create_enclave(&image_id, app_enclave_id);
         if (status!=SGX_SUCCESS) {
             printf("create_enclave Ecall failed: Error code is %x", status);
             return -1;
@@ -149,12 +151,13 @@ void run_request_server() {
             master_enclave_id, 
             &ret_status,
             master_enclave_id,
-            &vm_enclave_id,
+            app_enclave_id,
+            image_id,
             create_req_metadata,
             create_req_metadata_size
         );
 
-        status = MasterEnclave_test_create_session(master_enclave_id, &ret_status, master_enclave_id, vm_enclave_id);
+        status = MasterEnclave_test_create_session(master_enclave_id, &ret_status, master_enclave_id, app_enclave_id);
         if (status!=SGX_SUCCESS) {
             printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
             break;
