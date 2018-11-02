@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,34 +29,37 @@
  *
  */
 
-/* Enclave.edl - Top EDL file. */
+#ifndef UTILITY_E1_H__
+#define UTILITY_E1_H__
 
-enclave {
-    //from "sgx_tkey_exchange.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    
-    include "user_types.h" /* buffer_t */
-    include "tmessage.h"
-    include "sgx_trts.h"
-    include "openssl/ec.h"
+#include "stdint.h"
 
-    /* Import ECALL/OCALL from sub-directory EDLs.
-     *  [from]: specifies the location of EDL file. 
-     *  [import]: specifies the functions to import, 
-     *  [*]: implies to import all functions.
-     */
+typedef struct _internal_param_struct_t
+{
+    uint32_t ivar1;
+    uint32_t ivar2;
+}internal_param_struct_t;
 
-     trusted {
-         public void ecall_test([in, string]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in, size=sz]unsigned char* test_prv_pkey, int sz);
-     };
+typedef struct _external_param_struct_t
+{
+    uint32_t var1;
+    uint32_t var2;
+    internal_param_struct_t *p_internal_struct;
+}external_param_struct_t;
 
-    /* 
-     * ocall_print_string - invokes OCALL to display string buffer inside the enclave.
-     *  [in]: copy the string buffer to App outside.
-     *  [string]: specifies 'str' is a NULL terminated buffer.
-     */
-    untrusted {
-        void ocall_print_string([in, string] const char *str);
-    };
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-};
+uint32_t marshal_input_parameters_e2_foo1(uint32_t target_fn_id, uint32_t msg_type, uint32_t var1, uint32_t var2, char** marshalled_buff, size_t* marshalled_buff_len);
+uint32_t unmarshal_retval_and_output_parameters_e2_foo1(char* out_buff, char** retval);
+uint32_t unmarshal_input_parameters_e1_foo1(external_param_struct_t *pstruct, ms_in_msg_exchange_t* ms);
+uint32_t marshal_retval_and_output_parameters_e1_foo1(char** resp_buffer, size_t* resp_length, uint32_t retval, external_param_struct_t *p_struct_var, size_t len_data, size_t len_ptr_data);
+uint32_t marshal_message_exchange_request(uint32_t target_fn_id, uint32_t msg_type, uint32_t secret_data, char** marshalled_buff, size_t* marshalled_buff_len);
+uint32_t umarshal_message_exchange_request(uint32_t* inp_secret_data, ms_in_msg_exchange_t* ms);
+uint32_t marshal_message_exchange_response(char** resp_buffer, size_t* resp_length, uint32_t secret_response);
+uint32_t umarshal_message_exchange_response(char* out_buff, char** secret_response);
+#ifdef __cplusplus
+ }
+#endif
+#endif

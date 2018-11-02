@@ -44,11 +44,23 @@
 #include <openssl/rand.h>
 #include <openssl/obj_mac.h>
 #include <openssl/evp.h>
+#include <openssl/x509.h>
+
 
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
  */
+void printf(const char *fmt, ...)
+{
+    char buf[BUFSIZ] = {'\0'};
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, BUFSIZ, fmt, ap);
+    va_end(ap);
+    ocall_print_string(buf);
+}
+
 
 void ecall_read_file_test(){
 
@@ -260,33 +272,45 @@ cleanup:
 	return -1;
 }
 
-void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_data, unsigned char* test_pub_pkey, int len) {
-    EVP_PKEY *pub_pkey;
-    pub_pkey = (EVP_PKEY*)malloc(len * sizeof(unsigned char));
-    memcpy(pub_pkey, test_pub_pkey, len * sizeof(unsigned char)); 
-
-    EC_KEY *test_pub_key;
-    int ret;
-
-    if ( (test_pub_key = EC_KEY_new()) == NULL ) {
-        printf("failed test_pub_key = EC_KEY_new()\n");
+void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_data, unsigned char* test_prv_key, int len) {
+    // EVP_PKEY *opkey;
+	// opkey = EVP_PKEY_new();
+	// if(opkey == NULL){
+    //     printf("EVP_PKEY_new()\n"); 
+    //     return;
+    // }
+    EC_KEY *eckey;
+    if ( (eckey = ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime192v1)) == NULL ) {
+        printf("failed test_prv_key = EC_KEY_new()\n");
         return;
     }
 
-    test_pub_key = EVP_PKEY_get1_EC_KEY(pub_pkey);
-    if ( test_pub_key == NULL ) {
-        printf("cant read test_pub_key\n");
-        return;
-    } 
+    EC_KEY_set_asn1_flag(ec_key, OPENSSL_EC_NAMED_CURVE);
 
+	if(d2i_ECPrivateKey(&eckey, (const unsigned char**)&test_prv_key, len) != NULL){
+        printf("d2i_PUBKEY(&opkey, &pub_key, len)\n"); 
+        return;
+    }
+
+    int i;
+    for (i=0; i < len; i++) {
+        printf("%x ", test_prv_key[i]);
+    }
+    printf("\n");
+
+    printf("end d2i_ECPrivateKey\n");
+
+    int ret;
     /* decrypt */
     dec_req_data_t *deced_dec_req_data;
     int dec_len = 0;
-    dec_len = elgamal_decrypt((unsigned char**)&deced_dec_req_data, enc_data, enc_len, test_pub_key);
+
+    dec_len = elgamal_decrypt((unsigned char**)&deced_dec_req_data, enc_data, enc_len, eckey);
     if (!dec_len) {
         printf("Decrypt error\n");
 		return;
     }
+    printf("end Decrypt\n");
 
     // 復号化した構造体のhashを計算して正しいか比較
     unsigned char digest[32];
@@ -296,6 +320,7 @@ void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_da
         printf("failed sha256_digest");
         return;
     }
+    printf("end sha256_digest\n");
 
     // hashを比較
     ret = memcmp(digest, deced_dec_req_data->digest, sizeof(digest));
@@ -305,15 +330,6 @@ void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_da
     }
 
     memcpy(ret_req_data, &deced_dec_req_data, sizeof(dec_req_data_t));
-    printf("OK!\n");
-}
 
-void printf(const char *fmt, ...)
-{
-    char buf[BUFSIZ] = {'\0'};
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buf, BUFSIZ, fmt, ap);
-    va_end(ap);
-    ocall_print_string(buf);
+    printf("OK!\n");
 }

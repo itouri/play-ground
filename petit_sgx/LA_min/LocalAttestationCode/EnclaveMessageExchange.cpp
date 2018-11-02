@@ -37,7 +37,6 @@
 #include "error_codes.h"
 #include "sgx_ecp_types.h"
 #include "sgx_thread.h"
-#include <map>
 #include "dh_session_protocol.h"
 #include "sgx_dh.h"
 #include "sgx_tcrypto.h"
@@ -64,8 +63,6 @@ ATTESTATION_STATUS generate_session_id(uint32_t *session_id);
 
 //Array of open session ids
 session_id_tracker_t *g_session_id_tracker[MAX_SESSION_COUNT];
-
-//Map between the source enclave id and the session information associated with that particular session
 std::map<sgx_enclave_id_t, dh_session_t>g_dest_session_info_map;
 
 //Create a session with the destination enclave
@@ -199,7 +196,6 @@ ATTESTATION_STATUS session_request(sgx_enclave_id_t src_enclave_id,
     }
     memcpy(&session_info.in_progress.dh_session, &sgx_dh_session, sizeof(sgx_dh_session_t));
     //Store the session information under the correspoding source enlave id key
-    g_dest_session_info_map.insert(std::pair<sgx_enclave_id_t, dh_session_t>(src_enclave_id, session_info));
     
     return status;
 }
@@ -455,7 +451,7 @@ ATTESTATION_STATUS send_request_receive_response(sgx_enclave_id_t src_enclave_id
 
 }
 
-//Process the request from the Source enclave and send the response message back to the Source enclave
+// //Process the request from the Source enclave and send the response message back to the Source enclave
 ATTESTATION_STATUS generate_response(sgx_enclave_id_t src_enclave_id,
                                      secure_message_t* req_message,
                                      size_t req_message_size,

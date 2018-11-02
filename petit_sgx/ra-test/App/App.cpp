@@ -64,7 +64,7 @@ EVP_PKEY *test_pub_pkey;
 
 // 読んだ鍵
 EC_KEY *test_prv_key;
-//EC_KEY *test_pub_key;
+EC_KEY *test_pub_key;
 
 /* Error code returned by sgx_create_enclave */
 static sgx_errlist_t sgx_errlist[] = {
@@ -345,7 +345,7 @@ int read_ec_keys(){
         printf("can't load key public key file: %s\n", pub_file_path);
         return -1;
     }
-
+    
     if ( (test_prv_key = EC_KEY_new()) == NULL ) {
         printf("failed test_prv_key = EC_KEY_new()\n");
         return -1;
@@ -356,9 +356,18 @@ int read_ec_keys(){
     if ( test_prv_key == NULL ) {
         printf("cant read test_prv_key\n");
         return -1;
-
+    }
+    
+    if( (test_pub_key = EC_KEY_new()) == NULL ) {
+        printf("failed test_pub_key = EC_KEY_new()\n");
+        return -1;
     }
 
+    test_pub_key = EVP_PKEY_get1_EC_KEY(test_pub_pkey);
+    if ( test_pub_key == NULL ) {
+        printf("cant read test_pub_key\n");
+        return -1;
+    }     
     return 0;
 }
 
@@ -376,7 +385,8 @@ int SGX_CDECL main(int argc, char *argv[])
     }
 
     /* read key */
-    if ( !read_ec_keys() ) {
+    if ( read_ec_keys() ) {
+        printf("failed read_ec_keys()\n");
         return -1;
     }
 
@@ -419,17 +429,34 @@ int SGX_CDECL main(int argc, char *argv[])
 
     dec_req_data_t *ret_dec_req_data;
     ret_dec_req_data = (dec_req_data_t*)malloc(sizeof(dec_req_data_t));
-    // ecallで enc_dataを渡してしまう
-    //int sz = BN_num_bits( test_pub_key->group->p );
-    int sz = EVP_PKEY_size(test_pub_pkey);
-    ecall_test(global_eid, enc_data, enc_len, ret_dec_req_data, (unsigned char*)test_pub_pkey, sz);
+
+    // 鍵の unsigned char を作る
+	u_int8_t prv_size = i2d_ECPrivateKey(test_prv_key, NULL);
+    if(!prv_size){
+        printf("PUB KEY TO DATA ZERO\n"); 
+        return 1;
+    }
+
+	u_int8_t * prv_key = (u_int8_t*)malloc(prv_size);
+	if ( !i2d_ECPrivateKey(test_prv_key, &prv_key) ) {
+        printf("i2d_PUBKEY(test_pub_pkey, &prv_key)\n"); 
+        return 1;
+    }
+
+    int i;
+    for (i=0; i < prv_size; i++) {
+        printf("%x ", prv_key[i]);
+    }
+    printf("\n");
+
+    ecall_test(global_eid, enc_data, enc_len, ret_dec_req_data, (unsigned char*)prv_key, prv_size);
 
     // 復号化した構造体のhashを計算
     unsigned char digest[32];
     ret = sha256_digest((const unsigned char*)&ret_dec_req_data->req_data, sizeof(req_data_t), digest);
     // TODO 1なら success?
     if (!ret) {
-        printf("failed sha256_digest");
+        printf("failed sha256_digest\n");
         return 1;
     }
 

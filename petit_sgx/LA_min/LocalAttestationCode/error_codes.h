@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,34 +29,25 @@
  *
  */
 
-/* Enclave.edl - Top EDL file. */
+#ifndef ERROR_CODES_H_
+#define ERROR_CODES_H_
 
-enclave {
-    //from "sgx_tkey_exchange.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    
-    include "user_types.h" /* buffer_t */
-    include "tmessage.h"
-    include "sgx_trts.h"
-    include "openssl/ec.h"
+typedef uint32_t ATTESTATION_STATUS;
 
-    /* Import ECALL/OCALL from sub-directory EDLs.
-     *  [from]: specifies the location of EDL file. 
-     *  [import]: specifies the functions to import, 
-     *  [*]: implies to import all functions.
-     */
-
-     trusted {
-         public void ecall_test([in, string]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in, size=sz]unsigned char* test_prv_pkey, int sz);
-     };
-
-    /* 
-     * ocall_print_string - invokes OCALL to display string buffer inside the enclave.
-     *  [in]: copy the string buffer to App outside.
-     *  [string]: specifies 'str' is a NULL terminated buffer.
-     */
-    untrusted {
-        void ocall_print_string([in, string] const char *str);
-    };
-
-};
+#define SUCCESS                          0x00
+#define INVALID_PARAMETER                0xE1
+#define VALID_SESSION                    0xE2
+#define INVALID_SESSION                  0xE3
+#define ATTESTATION_ERROR                0xE4
+#define ATTESTATION_SE_ERROR             0xE5
+#define IPP_ERROR                        0xE6
+#define NO_AVAILABLE_SESSION_ERROR       0xE7
+#define MALLOC_ERROR                     0xE8
+#define ERROR_TAG_MISMATCH               0xE9
+#define OUT_BUFFER_LENGTH_ERROR          0xEA
+#define INVALID_REQUEST_TYPE_ERROR       0xEB
+#define INVALID_PARAMETER_ERROR          0xEC
+#define ENCLAVE_TRUST_ERROR              0xED
+#define ENCRYPT_DECRYPT_ERROR            0xEE
+#define DUPLICATE_SESSION                0xEF
+#endif

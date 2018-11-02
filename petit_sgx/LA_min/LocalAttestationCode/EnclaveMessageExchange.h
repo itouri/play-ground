@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,34 +29,28 @@
  *
  */
 
-/* Enclave.edl - Top EDL file. */
 
-enclave {
-    //from "sgx_tkey_exchange.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    
-    include "user_types.h" /* buffer_t */
-    include "tmessage.h"
-    include "sgx_trts.h"
-    include "openssl/ec.h"
+#include "datatypes.h"
+#include "sgx_eid.h"
+#include "sgx_trts.h"
+#include <map>
+#include "dh_session_protocol.h"
 
-    /* Import ECALL/OCALL from sub-directory EDLs.
-     *  [from]: specifies the location of EDL file. 
-     *  [import]: specifies the functions to import, 
-     *  [*]: implies to import all functions.
-     */
+#ifndef LOCALATTESTATION_H_
+#define LOCALATTESTATION_H_
 
-     trusted {
-         public void ecall_test([in, string]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in, size=sz]unsigned char* test_prv_pkey, int sz);
-     };
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    /* 
-     * ocall_print_string - invokes OCALL to display string buffer inside the enclave.
-     *  [in]: copy the string buffer to App outside.
-     *  [string]: specifies 'str' is a NULL terminated buffer.
-     */
-    untrusted {
-        void ocall_print_string([in, string] const char *str);
-    };
+uint32_t SGXAPI create_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, dh_session_t *p_session_info);
+uint32_t SGXAPI send_request_receive_response(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, dh_session_t *p_session_info, char *inp_buff, size_t inp_buff_len, size_t max_out_buff_size, char **out_buff, size_t* out_buff_len);
+uint32_t SGXAPI close_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
 
-};
+void printe(char *str);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
