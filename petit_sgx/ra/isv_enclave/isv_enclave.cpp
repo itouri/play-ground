@@ -369,6 +369,9 @@ sgx_status_t put_secret_data(
             break;
         }
 
+        // 鍵を受けとる
+        
+
         uint8_t aes_gcm_iv[12] = {0};
         ret = sgx_rijndael128GCM_decrypt(&sk_key,
                                          p_secret,

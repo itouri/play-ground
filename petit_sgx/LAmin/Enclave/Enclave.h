@@ -29,34 +29,21 @@
  *
  */
 
-/* Enclave.edl - Top EDL file. */
 
-enclave {
-    //from "sgx_tkey_exchange.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    
-    include "user_types.h" /* buffer_t */
-    include "tmessage.h"
-    include "sgx_trts.h"
-    include "openssl/ec.h"
+#ifndef _ENCLAVE_H_
+#define _ENCLAVE_H_
 
-    /* Import ECALL/OCALL from sub-directory EDLs.
-     *  [from]: specifies the location of EDL file. 
-     *  [import]: specifies the functions to import, 
-     *  [*]: implies to import all functions.
-     */
+#include <stdlib.h>
+#include <assert.h>
 
-     trusted {
-         public void ecall_test([in, string]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in, size=sz]unsigned char* prv_key_buf, long sz);
-     };
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-    /* 
-     * ocall_print_string - invokes OCALL to display string buffer inside the enclave.
-     *  [in]: copy the string buffer to App outside.
-     *  [string]: specifies 'str' is a NULL terminated buffer.
-     */
-    untrusted {
-        void ocall_print_string([in, string] const char *str);
-    };
+void printf(const char *fmt, ...);
 
-};
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* !_ENCLAVE_H_ */

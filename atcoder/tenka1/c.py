@@ -17,7 +17,6 @@ if n == 3:
 a = 0
 for i in range(1, len(ana)):
     a += abs(ana[i-1] - ana[i])
-
 print(a)
 #print(a, ana)
 
