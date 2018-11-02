@@ -32,6 +32,9 @@
 
 // App.cpp : Defines the entry point for the console application.
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <map>
 #include "../MasterEnclave/MasterEnclave_u.h"
 #include "../GrapheneEnclave/GrapheneEnclave_u.h"
@@ -40,6 +43,14 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <signal.h>
 
 #define UNUSED(val) (void)(val)
 #define TCHAR   char
@@ -47,6 +58,8 @@
 #define _T(str) str
 #define scanf_s scanf
 #define _tmain  main
+
+#define IMAGE_ID_SIZE 8
 
 extern std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
 
@@ -64,6 +77,101 @@ void waitForKeyPress()
     printf("\n\nHit a key....\n");
     temp = scanf_s("%c", &ch);
     (void) temp;
+}
+
+sgx_status_t create_enclave(const char * image_id, sgx_enclave_id_t * app_enclave_id) {
+    int ret, launch_token_updated;
+    sgx_launch_token_t launch_token;
+    sgx_status_t ret;
+
+    // golangを合わせる必要がある
+    const char * enclave_so_path = "./image";
+    enclave_file_path += IMG_PATH + image_id + "/emain.so";
+
+    ret = sgx_create_enclave(enclave_file_path, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, app_enclave_id, NULL);
+    return ret;
+}
+
+// 
+void run_request_server() {
+    // https://qiita.com/methane/items/a467a28c8359b045a498
+    int r;
+    int listen_fd = 0;
+    struct sockaddr_un local, remote;
+
+    signal(SIGPIPE, SIG_IGN);
+    listen_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, "test.uds");
+    unlink(local.sun_path);
+    r = bind(listen_fd, (struct sockaddr *)&local, sizeof(local));
+    if (r) {
+        perror("failed to bind");
+    }
+
+    listen(listen_fd, 100);
+    printf("starting request server...\n");
+
+    for (;;) {
+        socklen_t len = sizeof(remote);
+        int remote_fd = accept(listen_fd, (struct sockaddr *)&remote, &len);
+        if (remote_fd < 0) {
+            perror("failed to accept");
+            return 0;
+        }
+        uint8_t image_id[IMAGE_ID_SIZE];
+        uint8_t * image_metadata;
+        uint8_t * create_req_metadata;
+
+        uint8_t buf[1024]; //TODO サイズを決める
+        memset(buf, 0, sizeof buf);
+
+        int n;
+        n = read(listen_fd, buf, sizeof buf);
+        if (n < 0) {
+            perror("read length is zero");
+            return 1;
+        }
+
+        sgx_enclave_id_t app_enclave_id;
+
+        //memcpy(app_enclave_id, buf, sizeof sgx_enclave_id_t); // enclave_idを受け取る必要はない
+        sgx_status_t status;
+        status = create_enclave(&image_id, app_enclave_id);
+        if (status!=SGX_SUCCESS) {
+            printf("create_enclave Ecall failed: Error code is %x", status);
+            return -1;
+        }
+
+        int create_req_metadata_size = n - IMAGE_ID_SIZE;
+        create_req_metadata = (uint8_t*)malloc(create_req_metadata_size);
+        memcpy(create_req_metadata, &buf[IMAGE_ID_SIZE], create_req_metadata_size);
+
+        status = MasterEnclave_LA(
+            master_enclave_id, 
+            &ret_status,
+            master_enclave_id,
+            app_enclave_id,
+            image_id,
+            create_req_metadata,
+            create_req_metadata_size
+        );
+
+        status = MasterEnclave_test_create_session(master_enclave_id, &ret_status, master_enclave_id, app_enclave_id);
+        if (status!=SGX_SUCCESS) {
+            printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
+            break;
+        } else {
+            if(ret_status==0) {
+                printf("\n\nSecure Channel Establishment between Source (E1) and Destination (E2) Enclaves successful !!!");
+            } else {
+                printf("\nSession establishment and key exchange failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
+                break;
+            }
+        }
+        close(remote_fd);
+    }
+    close(listen_fd);
 }
 
 uint32_t load_enclaves()
@@ -110,7 +218,10 @@ int _tmain(int argc, _TCHAR* argv[])
     printf("\master enclave - EnclaveID %" PRIx64, master_enclave_id);
     printf("\ngraphene enclave - EnclaveID %" PRIx64, graphene_enclave_id);
     printf("\n");
+
+    run_request_server();
     
+    // request_serverへ移行
     do
     {
         // 必要なのは master E と graphene E とのコネクションだけ
