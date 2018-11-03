@@ -269,7 +269,7 @@ App/%.o: App/%.c
 	@echo "CC  <=  $<"
 
 App/Enclave_u.c: $(SGX_EDGER8R) Enclave/Enclave.edl
-	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include $(U_SEARCH_PATH)
+	@cd App && $(SGX_EDGER8R) --use-prefix --untrusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include $(U_SEARCH_PATH)
 	@echo "GEN  =>  $@"
 
 App/Enclave_u.o: App/Enclave_u.c
@@ -291,7 +291,7 @@ $(App_Name): App/Enclave_u.o $(App_Cpp_Objects) $(App_C_Objects)
 ######## Enclave Objects ########
 
 Enclave/Enclave_t.c: $(SGX_EDGER8R) Enclave/Enclave.edl
-	@cd Enclave && $(SGX_EDGER8R) --trusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include $(T_SEARCH_PATH)
+	@cd Enclave && $(SGX_EDGER8R) --use-prefix --trusted ../Enclave/Enclave.edl --search-path ../Enclave --search-path $(SGX_SDK)/include $(T_SEARCH_PATH)
 	@echo "GEN  =>  $@"
 
 Enclave/Enclave_t.o: Enclave/Enclave_t.c

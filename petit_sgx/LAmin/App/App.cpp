@@ -5,12 +5,36 @@
 #include "sgx_dh.h"
 #include <string.h>
 
-#include <map.h>
+#include "../MasterEnclave/MasterEnclave_u.h"
+#include "../LibEnclave/LibEnclave_u.h"
+
+#include "error_codes.h"
+
+#include <map>
 
 sgx_enclave_id_t master_enclave_id = 0;
 sgx_enclave_id_t app_enclave_id = 0;
 
 std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
+
+#define MASTER_ENC_PATH "libMasterenclave.so"
+#define LIB_ENC_PATH "libLibenclave.so"
+
+void print_ocall(char *str)
+{
+	int i;
+	int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
+	printf("\n");
+	for(i = 0; i < size; ++i) {
+		printf("%x ",str[i]);
+	}
+	printf("\n");
+	for(i = 0; i < size; ++i) {
+		printf("%c ",str[i]);
+	}
+	printf("size: %d\n", strlen((const char*)str));
+	fflush(stdout);
+}
 
 //LIB
 ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg1_t* dh_msg1, uint32_t* session_id)
@@ -57,39 +81,37 @@ uint32_t load_enclaves()
     enclave_temp_no++;
     g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(master_enclave_id, enclave_temp_no));
 
-    ret = sgx_create_enclave(GRAPHENE_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &graphene_enclave_id, NULL);
+    ret = sgx_create_enclave(LIB_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &app_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
                 return ret;
     }
 
     enclave_temp_no++;
-    g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(graphene_enclave_id, enclave_temp_no));
+    g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(app_enclave_id, enclave_temp_no));
 
     return SGX_SUCCESS;
 }
 
-int main() {
+int main()
+{
+    uint32_t ret_status;
+    sgx_status_t status;
+
     if(load_enclaves() != SGX_SUCCESS)
     {
         printf("\nLoad Enclave Failure");
     }
 
     status = create_session(master_enclave_id, &ret_status, master_enclave_id, app_enclave_id);
-        if (status!=SGX_SUCCESS)
-        {
-            printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
-            break;
-        }
-        else
-        {
-            if(ret_status==0)
-            {
-                printf("\n\nSecure Channel Establishment between Source (E1) and Destination (E2) Enclaves successful !!!");
-            }
-            else
-            {
-                printf("\nSession establishment and key exchange failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
-                break;
-            }
-        }
+    if (status!=SGX_SUCCESS) {
+        printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
+        return -1;
+    }
+
+    if (ret_status != 0) {
+        printf("\nSession establishment and key exchange failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
+        return -1;
+    }
+    printf("\n\nSecure Channel Establishment between Source (E1) and Destination (E2) Enclaves successful !!!");
+    return 0;
 }
