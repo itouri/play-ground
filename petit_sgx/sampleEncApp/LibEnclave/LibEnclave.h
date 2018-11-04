@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,14 +29,21 @@
  *
  */
 
-enclave {
-    include "sgx_eid.h"
-    from "../LocalAttestationCode/LocalAttestationCode.edl" import *;
-    trusted{
-            public uint32_t test_create_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
-            public uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
-            public uint32_t test_message_exchange(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
-            public uint32_t test_close_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
-    };
 
-};
+#ifndef _ENCLAVE_H_
+#define _ENCLAVE_H_
+
+#include <stdlib.h>
+#include <assert.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void printf(const char *fmt, ...);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* !_ENCLAVE_H_ */
