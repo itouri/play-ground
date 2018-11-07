@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,22 +29,21 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "../Include/datatypes.h"
-    include "../Include/dh_session_protocol.h"
-    trusted{
-        public uint32_t create_session( sgx_enclave_id_t src_enclave_id,
-                                        sgx_enclave_id_t dest_enclave_id,
-                                        [in]uint8_t * image_metadata,
-                                        uint32_t image_metadata_size,
-                                        [in]uint8_t * create_req_metadata,
-                                        uint32_t create_req_metadata_size
-        );
-    };
 
-    untrusted{
-        uint32_t session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, [out] sgx_dh_msg1_t *dh_msg1,[out] uint32_t *session_id);
-        uint32_t exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, [in] sgx_dh_msg2_t *dh_msg2, [out] sgx_dh_msg3_t *dh_msg3, uint32_t session_id);
-    };
-};
+#ifndef _ENCLAVE_H_
+#define _ENCLAVE_H_
+
+#include <stdlib.h>
+#include <assert.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void printf(const char *fmt, ...);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* !_ENCLAVE_H_ */

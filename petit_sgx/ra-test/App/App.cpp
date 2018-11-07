@@ -355,12 +355,12 @@ int SGX_CDECL main(int argc, char *argv[])
     }
 
     // int i;
-	// for (i=0; i<prv_size; i++) {
-	// 	printf("%x " ,prv_key[i]);
+	// for (i=0; i<key_length; i++) {
+	// 	printf("%x " ,(unsigned char)b[i]);
 	// }
 	// printf("\n------------\n");
 
-    ecall_test(global_eid, (unsigned char*)enc_data, enc_len, ret_dec_req_data, prv_key_buf, prv_size);
+    ecall_test(global_eid, (unsigned char*)enc_data, enc_len, ret_dec_req_data, (unsigned char*)prv_key_buf, prv_size);
 
     // // 復号化した構造体のhashを計算
     // unsigned char digest[32];

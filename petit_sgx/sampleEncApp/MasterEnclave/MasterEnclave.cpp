@@ -48,6 +48,9 @@
 #include "sgx_tcrypto.h"
 
 #include "error_codes.h"
+#include "metadata_types.h"
+
+//#include <openssl/rsa.h>
 
 #define MAX_SESSION_COUNT  16
 
@@ -97,7 +100,8 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
 //Create a session with the destination enclave
 ATTESTATION_STATUS _create_session(sgx_enclave_id_t src_enclave_id,
                          sgx_enclave_id_t dest_enclave_id,
-                         dh_session_t *session_info)
+                         dh_session_t *session_info,
+                         sgx_measurement_t mrenclave)
 {
     sgx_dh_msg1_t dh_msg1;            //Diffie-Hellman Message 1
     sgx_key_128bit_t dh_aek;        // Session Key
@@ -164,8 +168,11 @@ ATTESTATION_STATUS _create_session(sgx_enclave_id_t src_enclave_id,
         return status;
     }
 
-    // MasterEncの処理 送られて来たMRENCLAVEが正しいgrapheneのものか
-    print_ocall((char*)&dh_msg3.msg3_body.report.body.mr_enclave);
+    // // MasterEncの処理 送られて来たMRENCLAVEが正しいgrapheneのものか
+    // if ( memcpy(&dh_msg3.msg3_body.report.body.mr_enclave, &mrenclave, sizeof(sgx_measurement_t)) != 0 ) {
+    //     print_ocall("doesnt match mrenclave\n");
+    // }
+    ocall_print_string((char*)&dh_msg3.msg3_body.report.body.mr_enclave);
 
     // Verify the identity of the destination enclave
     if(verify_peer_enclave_trust(&responder_identity) != SUCCESS)
@@ -181,14 +188,54 @@ ATTESTATION_STATUS _create_session(sgx_enclave_id_t src_enclave_id,
     return status;
 }
 
+// RSA * prv_key;
+
 ATTESTATION_STATUS create_session(sgx_enclave_id_t src_enclave_id,
-                        sgx_enclave_id_t dest_enclave_id)
+                        sgx_enclave_id_t dest_enclave_id,
+                        uint8_t * enc_image_metadata,
+                        uint32_t enc_image_metadata_size,
+                        uint8_t * enc_create_req_metadata,
+                        uint32_t enc_create_req_metadata_size)
 {
+    /* ras秘密鍵で imd, crm を復号化 */
+    image_metadata_t * image_metadata;
+    create_req_metadata_t * create_req_metadata;
+
+    image_metadata = (image_metadata_t*)malloc(sizeof(image_metadata_t));
+    create_req_metadata = (create_req_metadata_t*)malloc(sizeof(create_req_metadata_t));
+
+    // decrypted_len = RSA_private_decrypt(enc_image_metadata_size, enc_image_metadata, image_metadata, prv_key, RSA_PKCS1_PADDING);
+    // if ( decrypted_len == -1 ){
+    //     printf("in decrypt: err=%s\n", ERR_error_string(ERR_get_error(), errbuf));
+    //     return -1;
+    // }
+
+    // decrypted_len = RSA_private_decrypt(enc_create_req_metadata_size, enc_create_req_metadata, create_req_metadata, prv_key, RSA_PKCS1_PADDING);
+    // if ( decrypted_len == -1 ){
+    //     printf("in decrypt: err=%s\n", ERR_error_string(ERR_get_error(), errbuf));
+    //     return -1;
+    // }
+
+    // /* imd と crm の client_idを比較 */
+    // if ( memcpy(image_metadata->client_id, create_req_metadata->client_id, sizeof(image_metadata->client_id)) != 0 ) {
+    //     printf("doesnt match imd, crm client_id\n");
+    //     return -1;
+    // }
+
+    // mock
+    memcpy(image_metadata, enc_image_metadata, enc_image_metadata_size);
+    memcpy(create_req_metadata, enc_create_req_metadata, enc_create_req_metadata_size);
+
+    if ( memcmp(image_metadata->client_id, create_req_metadata->client_id, sizeof(image_metadata->client_id)) != 0 ) {
+        printf("doesnt match imd, crm client_id\n");
+        return -1;
+    }
+
     ATTESTATION_STATUS ke_status = SUCCESS;
     dh_session_t dest_session_info;
 
     //Core reference code function for creating a session
-    ke_status = _create_session(src_enclave_id, dest_enclave_id, &dest_session_info);
+    ke_status = _create_session(src_enclave_id, dest_enclave_id, &dest_session_info, image_metadata->mrenclave);
 
     //Insert the session information into the map under the corresponding destination enclave id
     if(ke_status == SUCCESS)

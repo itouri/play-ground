@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,22 +29,52 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "../Include/datatypes.h"
-    include "../Include/dh_session_protocol.h"
-    trusted{
-        public uint32_t create_session( sgx_enclave_id_t src_enclave_id,
-                                        sgx_enclave_id_t dest_enclave_id,
-                                        [in]uint8_t * image_metadata,
-                                        uint32_t image_metadata_size,
-                                        [in]uint8_t * create_req_metadata,
-                                        uint32_t create_req_metadata_size
-        );
-    };
 
-    untrusted{
-        uint32_t session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, [out] sgx_dh_msg1_t *dh_msg1,[out] uint32_t *session_id);
-        uint32_t exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, [in] sgx_dh_msg2_t *dh_msg2, [out] sgx_dh_msg3_t *dh_msg3, uint32_t session_id);
-    };
-};
+#include <stdarg.h>
+#include <stdio.h>      /* vsnprintf */
+#include <string.h>      /* vsnprintf */
+
+#include "MasterEnclave.h"
+#include "MasterEnclave_t.h"  /* print_string */
+
+#include "sgx_trts.h"
+#include "sgx_utils.h"
+#include "sgx_eid.h"
+#include "sgx_ecp_types.h"
+#include "sgx_thread.h"
+#include <map>
+#include "dh_session_protocol.h"
+#include "sgx_dh.h"
+#include "sgx_tcrypto.h"
+
+#include "error_codes.h"
+
+#define MAX_SESSION_COUNT  16
+
+//number of open sessions
+uint32_t g_session_count = 0;
+
+//Array of open session ids
+session_id_tracker_t *g_session_id_tracker[MAX_SESSION_COUNT];
+
+std::map<sgx_enclave_id_t, dh_session_t>g_dest_session_info_map;
+std::map<sgx_enclave_id_t, dh_session_t>g_src_session_info_map;
+
+
+/* 
+ * printf: 
+ *   Invokes OCALL to display the enclave buffer to the terminal.
+ */
+void printf(const char *fmt, ...)
+{
+    char buf[BUFSIZ] = {'\0'};
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, BUFSIZ, fmt, ap);
+    va_end(ap);
+    print_ocall(buf);
+}
+
+void test_ecall(sgx_enclave_id_t enclave_id) {
+    printf("enclave_id = %u\n", (uint64_t)enclave_id);
+}

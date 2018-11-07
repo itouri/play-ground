@@ -29,22 +29,40 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "../Include/datatypes.h"
-    include "../Include/dh_session_protocol.h"
-    trusted{
-        public uint32_t create_session( sgx_enclave_id_t src_enclave_id,
-                                        sgx_enclave_id_t dest_enclave_id,
-                                        [in]uint8_t * image_metadata,
-                                        uint32_t image_metadata_size,
-                                        [in]uint8_t * create_req_metadata,
-                                        uint32_t create_req_metadata_size
-        );
-    };
+#ifndef _DH_SESSION_PROROCOL_H
+#define _DH_SESSION_PROROCOL_H
 
-    untrusted{
-        uint32_t session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, [out] sgx_dh_msg1_t *dh_msg1,[out] uint32_t *session_id);
-        uint32_t exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, [in] sgx_dh_msg2_t *dh_msg2, [out] sgx_dh_msg3_t *dh_msg3, uint32_t session_id);
+#include "sgx_ecp_types.h"
+#include "sgx_key.h"
+#include "sgx_report.h"
+#include "sgx_attributes.h"
+
+#define NONCE_SIZE         16
+#define MAC_SIZE           16
+
+#define MSG_BUF_LEN        sizeof(ec_pub_t)*2
+#define MSG_HASH_SZ        32
+
+
+//Session information structure
+typedef struct _la_dh_session_t
+{
+    uint32_t  session_id; //Identifies the current session
+    uint32_t  status; //Indicates session is in progress, active or closed
+    union
+    {
+        struct
+        {
+			sgx_dh_session_t dh_session;
+        }in_progress;
+
+        struct
+        {
+            sgx_key_128bit_t AEK; //Session Key
+            uint32_t counter; //Used to store Message Sequence Number
+        }active;
     };
-};
+} dh_session_t;
+
+
+#endif

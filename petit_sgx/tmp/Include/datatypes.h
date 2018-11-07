@@ -67,8 +67,6 @@
 
 #define VMC_ATTRIBUTE_MASK  0xFFFFFFFFFFFFFFCB
 
-typedef uint8_t image_id_t[16];
-
 typedef uint8_t dh_nonce[NONCE_SIZE];
 typedef uint8_t cmac_128[MAC_SIZE];
 

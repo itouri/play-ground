@@ -89,7 +89,7 @@ SGX_COMMON_CXXFLAGS := $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++11
 # UnTrustLib_Include_Paths := -I$(SGX_SDK)/include -I./Include -I./LocalAttestationCode
 # UnTrustLib_Cxx_Flags := $(SGX_COMMON_CXXFLAGS) -fPIC -Wno-attributes $(UnTrustLib_Include_Paths)
 
-######## MasterApp Settings ########
+######## App Settings ########
 
 ifneq ($(SGX_MODE), HW)
 	Urts_Library_Name := sgx_urts_sim
@@ -97,37 +97,36 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
-MasterApp_Cpp_Files := $(wildcard MasterApp/*.cpp)
-MasterApp_Include_Paths := -I$(SGX_SDK)/include -I./Include #-I./LocalAttestationCode
+App_Cpp_Files := $(wildcard App/*.cpp)
+App_Include_Paths := -I$(SGX_SDK)/include -I./Include #-I./LocalAttestationCode
 
-MasterApp_C_Flags := -fPIC -Wno-attributes $(MasterApp_Include_Paths)
+App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 # Three configuration modes - Debug, prerelease, release
 #   Debug - Macro DEBUG enabled.
 #   Prerelease - Macro NDEBUG and EDEBUG enabled.
 #   Release - Macro NDEBUG enabled.
 ifeq ($(SGX_DEBUG), 1)
-	MasterApp_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
+	App_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	MasterApp_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
+	App_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
 else
-	MasterApp_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
+	App_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
 endif
 
-MasterApp_Cxx_Flags := $(MasterApp_C_Flags) $(SGX_COMMON_CXXFLAGS)
-MasterApp_C_Flags += $(SGX_COMMON_CFLAGS)
+App_Cxx_Flags := $(App_C_Flags) $(SGX_COMMON_CXXFLAGS)
+App_C_Flags += $(SGX_COMMON_CFLAGS)
 
-MasterApp_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lpthread #-lLocalAttestation_unTrusted 
+App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lpthread #-lLocalAttestation_unTrusted 
 
 ifneq ($(SGX_MODE), HW)
-	MasterApp_Link_Flags += -lsgx_uae_service_sim
+	App_Link_Flags += -lsgx_uae_service_sim
 else
-	MasterApp_Link_Flags += -lsgx_uae_service
+	App_Link_Flags += -lsgx_uae_service
 endif
 
-MasterApp_Cpp_Objects := $(MasterApp_Cpp_Files:.cpp=.o)
-MasterApp_Name := master_enclave_Masterapp
-
-GerMrenclveApp_Name := get_mrenclave
+App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
+App_Name := app
+App2_Name := app2
 
 ######## Enclave Settings ########
 
@@ -199,17 +198,17 @@ endif
 endif
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) MasterEnclave.so LibEnclave.so Enclave3.so $(MasterApp_Name) $(GerMrenclveApp_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) MasterEnclave.so LibEnclave.so Enclave3.so $(App_Name) $(App2_Name)
 	@echo "The project has been built in release hardware mode."
-	@echo "Please sign the enclaves (MasterEnclave.so, LibEnclave.so, Enclave3.so) first with your signing keys before you run the $(MasterApp_Name) to launch and access the enclave."
+	@echo "Please sign the enclaves (MasterEnclave.so, LibEnclave.so, Enclave3.so) first with your signing keys before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclaves use the following commands:"
 	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <key1> -enclave MasterEnclave.so -out <$(MasterEnclave_Name)> -config MasterEnclave/MasterEnclave.config.xml"
-	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <key2> -enclave LibEnclave.so -out <$(Enclave_Name_2)> -config LibEnclave/LibEnclave.config.xml"
+	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <key2> -enclave LibEnclave.so -out <> -config LibEnclave/LibEnclave.config.xml"
 	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <key3> -enclave Enclave3.so -out <$(Enclave_Name_3)> -config Enclave3/Enclave3.config.xml"
 	@echo "You can also sign the enclaves using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) $(MasterEnclave_Name) $(Enclave_Name_2) $(Enclave_Name_3) $(MasterApp_Name) $(GerMrenclveApp_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) $(MasterEnclave_Name) $(Enclave_Name_3) $(App_Name) $(App2_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -224,33 +223,30 @@ endif
 endif
 
 .config_$(Build_Mode)_$(SGX_ARCH):
-	@rm -rf .config_* $(MasterApp_Name) *.so *.a MasterApp/*.o MasterEnclave/*.o MasterEnclave/*_t.* MasterEnclave/*_u.* LibEnclave/*.o LibEnclave/*_t.* LibEnclave/*_u.* LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.* 
+	@rm -rf .config_* $(App_Name) *.so *.a App/*.o MasterEnclave/*.o MasterEnclave/*_t.* MasterEnclave/*_u.* LibEnclave/*.o LibEnclave/*_t.* LibEnclave/*_u.* LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.* 
 	@touch .config_$(Build_Mode)_$(SGX_ARCH)
 
 
-######## MasterApp Objects ########
+######## App Objects ########
 MasterEnclave/MasterEnclave_u.c MasterEnclave/MasterEnclave_u.h: $(SGX_EDGER8R) MasterEnclave/MasterEnclave.edl
 	@cd MasterEnclave && $(SGX_EDGER8R) --untrusted ../MasterEnclave/MasterEnclave.edl --search-path $(SGX_SDK)/include 
 	@echo "GEN  =>  $@"
 
-MasterApp/MasterEnclave_u.o: MasterEnclave/MasterEnclave_u.c
-	@$(CC) $(MasterApp_C_Flags) -c $< -o $@
+App/MasterEnclave_u.o: MasterEnclave/MasterEnclave_u.c
+	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-LibEnclave/LibEnclave_u.c LibEnclave/LibEnclave_u.h: $(SGX_EDGER8R) LibEnclave/LibEnclave.edl
-	@cd LibEnclave && $(SGX_EDGER8R) --untrusted ../LibEnclave/LibEnclave.edl --search-path $(SGX_SDK)/include 
-	@echo "GEN  =>  $@"
-
-MasterApp/LibEnclave_u.o: LibEnclave/LibEnclave_u.c
-	@$(CC) $(MasterApp_C_Flags) -c $< -o $@
-	@echo "CC   <=  $<"
-
-MasterApp/%.o: MasterApp/%.cpp MasterEnclave/MasterEnclave_u.h LibEnclave/LibEnclave_u.h
-	@$(CXX) $(MasterApp_Cxx_Flags) -c $< -o $@
+App/%.o: App/%.cpp MasterEnclave/MasterEnclave_u.h
+	@$(CXX) $(App_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(MasterApp_Name): MasterApp/MasterEnclave_u.o MasterApp/LibEnclave_u.o $(MasterApp_Cpp_Objects) $(UnTrustLib_Name)
-	@$(CXX) $^ -o $@ $(MasterApp_Link_Flags)
+$(App_Name): App/MasterEnclave_u.o App/App.o $(UnTrustLib_Name)
+	@$(CXX) $^ -o $@ $(App_Link_Flags)
+	@echo "LINK =>  $@"
+
+######## App2 Objects ########
+$(App2_Name): App/MasterEnclave_u.o App/App2.o $(UnTrustLib_Name)
+	@$(CXX) $^ -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 ######## Enclave Objects ########
@@ -275,46 +271,9 @@ $(MasterEnclave_Name): MasterEnclave.so
 	@$(SGX_ENCLAVE_SIGNER) sign -key MasterEnclave/MasterEnclave_private.pem -enclave MasterEnclave.so -out $@ -config MasterEnclave/MasterEnclave.config.xml
 	@echo "SIGN =>  $@"
 
-LibEnclave/LibEnclave_t.c: $(SGX_EDGER8R) LibEnclave/LibEnclave.edl
-	@cd LibEnclave && $(SGX_EDGER8R) --trusted ../LibEnclave/LibEnclave.edl --search-path $(SGX_SDK)/include
-	@echo "GEN  =>  $@"
-
-LibEnclave/LibEnclave_t.o: LibEnclave/LibEnclave_t.c
-	@$(CC) $(Enclave_C_Flags) -c $< -o $@
-	@echo "CC   <=  $<"
-
-LibEnclave/%.o: LibEnclave/%.cpp
-	@$(CXX) $(Enclave_Cxx_Flags) -c $< -o $@
-	@echo "CXX  <=  $<"
-
-LibEnclave.so: LibEnclave/LibEnclave_t.o $(Enclave_Cpp_Objects_2) $(Trust_Lib_Name)
-	@$(CXX) -g LibEnclave/LibEnclave_t.o $(Enclave_Cpp_Objects_2) -o $@ $(LibEnclave_Link_Flags)
-	@echo "LINK =>  $@"
-
-$(Enclave_Name_2): LibEnclave.so
-	@$(SGX_ENCLAVE_SIGNER) sign -key LibEnclave/LibEnclave_private.pem -enclave LibEnclave.so -out $@ -config LibEnclave/LibEnclave.config.xml
-	@echo "SIGN =>  $@"
-
-######## GetMrenclave Objects ########
-LibApp/LibApp.o: LibApp.cpp
-	@$(CXX) $(MasterApp_Cxx_Flags) -c $< -o $@
-	@echo "CXX  <=  $<"
-
-App/LibEnclave_u.c App/LibEnclave_u.h: $(SGX_EDGER8R) LibEnclave/LibEnclave.edl
-	@cd App && $(SGX_EDGER8R) --untrusted ../LibEnclave/LibEnclave.edl --search-path $(SGX_SDK)/include 
-	@echo "GEN  =>  $@"
-
-App/GetMrenclave.o: App/GetMrenclave.cpp LibEnclave/LibEnclave_u.h
-	@$(CXX) $(MasterApp_Cxx_Flags) -c $< -o $@
-	@echo "CXX  <=  $<"
-
-$(GerMrenclveApp_Name):  App/GetMrenclave.o MasterApp/LibEnclave_u.o $(UnTrustLib_Name)
-	@$(CXX) $^ -o $@ $(MasterApp_Link_Flags)
-	@echo "LINK =>  $@"
-
 ######## Clean ########
 .PHONY: clean
 
 clean:
-	@rm -rf .config_* $(MasterApp_Name) *.so *.a MasterApp/*.o MasterEnclave/*.o MasterEnclave/*_t.* MasterEnclave/*_u.* LibEnclave/*.o LibEnclave/*_t.* LibEnclave/*_u.*
+	@rm -rf .config_* $(App_Name) *.so *.a App/*.o MasterEnclave/*.o MasterEnclave/*_t.* MasterEnclave/*_u.* LibEnclave/*.o LibEnclave/*_t.* LibEnclave/*_u.*
 

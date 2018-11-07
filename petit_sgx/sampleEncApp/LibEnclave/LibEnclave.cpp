@@ -70,7 +70,15 @@ void printf(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, BUFSIZ, fmt, ap);
     va_end(ap);
-    //ocall_print_string(buf);
+    ocall_print_string(buf);
+}
+
+void print_hex(unsigned char * str, int size) {
+    int i=0;
+    for (i=0; i < size; i++) {
+        printf("%x ", str[i]);
+    }
+    printf("\n");
 }
 
 //Respond to the request from the Source Enclave to close the session
@@ -289,3 +297,16 @@ ATTESTATION_STATUS exchange_report(sgx_enclave_id_t src_enclave_id,
     return status;
 }
 
+void get_mrenclave() {
+    sgx_report_t report;
+    sgx_status_t ret;
+
+    //printe("begin sgx_create_report\n");
+    ret = sgx_create_report(NULL, NULL, &report);
+    if ( ret != SGX_SUCCESS )
+    {
+        printf("failed sgx_create_report\n");
+        return;
+    }
+    print_hex((unsigned char*)&report.body.mr_enclave, sizeof(sgx_measurement_t));
+}

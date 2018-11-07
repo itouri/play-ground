@@ -113,12 +113,6 @@ cleanup:
 void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_data, unsigned char* prv_key_buf, long len) {
     char errbuf[1024];
 
-	// int i;
-	// for (i=0; i<len; i++) {
-	// 	printf("%x " ,prv_key[i]);
-	// }
-	// printf("\n");
-
 	RSA * prv_key;
     prv_key = d2i_RSAPrivateKey(NULL, (const unsigned char**)&prv_key_buf, len);
 	if( prv_key == NULL){
@@ -126,8 +120,13 @@ void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_da
         return;
     }
 
+    // int i;
+	// for (i=0; i<len; i++) {
+	// 	//printf("%x " ,(unsigned char)prv_key[i]);
+	// }
+	// printf("\n------------\n");
+
     printf("end i2d_RSAPrivateKey\n");
-	printf("%ld",enc_len);
 
     int ret;
     /* decrypt */
