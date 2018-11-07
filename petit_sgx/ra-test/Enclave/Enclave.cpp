@@ -120,11 +120,11 @@ void ecall_test(unsigned char *enc_data, int enc_len, dec_req_data_t *ret_req_da
         return;
     }
 
-    // int i;
-	// for (i=0; i<len; i++) {
-	// 	//printf("%x " ,(unsigned char)prv_key[i]);
-	// }
-	// printf("\n------------\n");
+    int i;
+	for (i=0; i<len; i++) {
+		//printf("%x " ,(unsigned char)prv_key[i]);
+	}
+	printf("\n------------\n");
 
     printf("end i2d_RSAPrivateKey\n");
 
