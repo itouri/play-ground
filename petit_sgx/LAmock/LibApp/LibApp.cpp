@@ -64,6 +64,19 @@ int main(int argc, char const *argv[])
         printf("Load Enclave Failure\n");
     }
 
+    status = create_session(master_enclave_id, &ret_status, master_enclave_id, app_enclave_id);
+    if (status!=SGX_SUCCESS) {
+        printf("create_session Ecall failed: Error code is %x", status);
+        return -1;
+    }
+
+    if (ret_status != 0) {
+        printf("\nSession establishment and key exchange failure: Error code is %x", ret_status);
+        return -1;
+    }
+    printf("\n\nSecure Channel Establishment Enclaves successful !!!");
+    return 0;    
+
     const char * unix_sock_path = argv[1];
     la(unix_sock_path);
 

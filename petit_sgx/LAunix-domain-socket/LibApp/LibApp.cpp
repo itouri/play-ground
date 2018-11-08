@@ -12,13 +12,9 @@
 
 #include <map>
 
-sgx_enclave_id_t master_enclave_id = 0;
-sgx_enclave_id_t app_enclave_id = 0;
+sgx_enclave_id_t vm_enclave_id = 0;
 
-std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
-
-#define MASTER_ENC_PATH "libMasterenclave.so"
-#define LIB_ENC_PATH "libLibenclave.so"
+#define VM_ENC_PATH "./emain.so"
 
 void print_ocall(char *str)
 {
@@ -36,22 +32,40 @@ void print_ocall(char *str)
 	fflush(stdout);
 }
 
+
+void send_session_request(sgx_dh_session_t * sgx_dh_session) {
+    // send!
+}
+
+void read_responce(sgx_dh_msg1_t * msg1, sgx_dh_session_t * sgx_dh_session) {
+    // read
+}
+
 //LIB
-ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg1_t* dh_msg1, uint32_t* session_id)
+ATTESTATION_STATUS ocall_session_request(sgx_dh_session_t * sgx_dh_session)
 {
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
 
-	ret = session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
-	if (ret == SGX_SUCCESS)
-		return (ATTESTATION_STATUS)status;
-	else	
-	    return INVALID_SESSION;
+    sgx_dh_msg1_t * msg1;
+
+    // send_session_request
+    send_session_request(sgx_dh_session);
+    read_responce(msg1, *sgx_dh_session);
+
+    // 両方とも書き換える必要はないはず
+    ecall_exchange_report(*msg1, *sgx_dh_session);
+
+	// ret = session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, sgx_dh_session);
+	// if (ret == SGX_SUCCESS)
+	// 	return (ATTESTATION_STATUS)status;
+	// else	
+	//     return INVALID_SESSION;
 
 }
 
 //Makes an sgx_ecall to the destination enclave sends message2 from the source enclave and gets message 3 from the destination enclave
-ATTESTATION_STATUS exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg2_t *dh_msg2, sgx_dh_msg3_t *dh_msg3, uint32_t session_id)
+ATTESTATION_STATUS ocall_exchange_report(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg2_t *dh_msg2, sgx_dh_msg3_t *dh_msg3, uint32_t session_id)
 {
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
@@ -63,31 +77,20 @@ ATTESTATION_STATUS exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 	else	
 	    return INVALID_SESSION;
 
+    return ret;
 }
 
-uint32_t load_enclaves()
+
+
+uint32_t load_vm_enclave()
 {
-    uint32_t enclave_temp_no;
     int ret, launch_token_updated;
     sgx_launch_token_t launch_token;
 
-    enclave_temp_no = 0;
-
-    ret = sgx_create_enclave(MASTER_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &master_enclave_id, NULL);
+    ret = sgx_create_enclave(VM_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &vm_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
                 return ret;
     }
-
-    enclave_temp_no++;
-    g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(master_enclave_id, enclave_temp_no));
-
-    ret = sgx_create_enclave(LIB_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &app_enclave_id, NULL);
-    if (ret != SGX_SUCCESS) {
-                return ret;
-    }
-
-    enclave_temp_no++;
-    g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(app_enclave_id, enclave_temp_no));
 
     return SGX_SUCCESS;
 }
@@ -97,12 +100,12 @@ int main()
     uint32_t ret_status;
     sgx_status_t status;
 
-    if(load_enclaves() != SGX_SUCCESS)
+    if(load_vm_enclave() != SGX_SUCCESS)
     {
         printf("\nLoad Enclave Failure");
     }
 
-    status = create_session(master_enclave_id, &ret_status, master_enclave_id, app_enclave_id);
+    status = ecall_create_session(vm_enclave_id), &ret_status, master_enclave_id, vm_enclave_id);
     if (status!=SGX_SUCCESS) {
         printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
         return -1;

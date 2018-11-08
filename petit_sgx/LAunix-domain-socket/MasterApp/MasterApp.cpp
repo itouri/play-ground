@@ -23,12 +23,12 @@
 sgx_enclave_id_t master_enclave_id;
 
 void read_session_request(int remote_fd, sgx_dh_msg1_t * dh_msg1, sgx_dh_session_t * sgx_dh_session) {
-    session_request();
+    ecall_session_request(master_enclave_id, dh_msg1, sgx_dh_session);
 }
 
 void send_responce (int remote_fd, sgx_dh_msg1_t dh_msg1, sgx_dh_session_t sgx_dh_session) {
     // 送る情報は sgx_dh_msg1_t と sgx_dh_session
-
+    //???
 }
 
 void read_exchange_report (int remote_fd, sgx_dh_msg3_t * dh_msg3) {
@@ -36,7 +36,7 @@ void read_exchange_report (int remote_fd, sgx_dh_msg3_t * dh_msg3) {
 }
 
 void send_msg3(int remote_fd, sgx_dh_msg3_t dh_msg3) {
-    
+
 }
 
 void ocall_send_responce() {
@@ -96,9 +96,6 @@ uint32_t load_master_enclave()
     if (ret != SGX_SUCCESS) {
                 return ret;
     }
-
-    enclave_temp_no++;
-    g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(app_enclave_id, enclave_temp_no));
 
     return SGX_SUCCESS;
 }

@@ -65,9 +65,6 @@ ATTESTATION_STATUS exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 
 }
 
-
-
-
 uint32_t load_master_enclave()
 {
     uint32_t enclave_temp_no;
