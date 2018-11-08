@@ -23,6 +23,13 @@ sgx_enclave_id_t vm_enclave_id = 0;
 
 #define VM_ENC_PATH "./libLibenclave.so"
 
+void print_hex(uint8_t * str, size_t size) {
+    int i;
+    for (i=0; i<size; i++) {
+        printf("%x", str[i]);
+    }
+}
+
 void ocall_print(char *str)
 {
 	// int i;
@@ -67,11 +74,16 @@ ATTESTATION_STATUS ocall_session_request(sgx_dh_msg1_t * dh_msg1) {
         return UNIX_DOMAIN_SOCKET_EEROR;
     }
 
+    printf("%d",sizeof(sgx_dh_msg1_t));
+
     // read
-    if(read(client_fd, dh_msg1, sizeof(dh_msg1) < 0)){
+    if(read(client_fd, dh_msg1, sizeof(sgx_dh_msg1_t) < 0)){
         fprintf(stderr, "read session req error errno[%d]\n", errno);
         return UNIX_DOMAIN_SOCKET_EEROR;
     }
+
+    print_hex((unsigned char *)dh_msg1, sizeof(sgx_dh_msg1_t));
+
     return SUCCESS;
 }
 
@@ -83,7 +95,7 @@ ATTESTATION_STATUS ocall_exchange_report (sgx_dh_msg2_t dh_msg2, sgx_dh_msg3_t *
     }
 
     // read
-    if(read(client_fd, dh_msg3, sizeof(dh_msg3)) < 0){
+    if(read(client_fd, dh_msg3, sizeof(sgx_dh_msg3_t)) < 0){
         fprintf(stderr, "read session req error errno[%d]\n", errno);
         return UNIX_DOMAIN_SOCKET_EEROR;
     }

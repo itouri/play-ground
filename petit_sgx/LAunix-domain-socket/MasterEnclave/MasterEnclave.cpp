@@ -101,7 +101,7 @@ ATTESTATION_STATUS ecall_session_request(sgx_dh_msg1_t * dh_msg1)
     }
 
     //Generate Message1 that will be returned to Source Enclave
-    status = sgx_dh_responder_gen_msg1((sgx_dh_msg1_t*)dh_msg1, &sgx_dh_session);
+    status = sgx_dh_responder_gen_msg1(dh_msg1, &sgx_dh_session);
     if(SGX_SUCCESS != status)
     {
         return status;

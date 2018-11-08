@@ -24,6 +24,13 @@
 
 sgx_enclave_id_t master_enclave_id;
 
+void print_hex(uint8_t * str, size_t size) {
+    int i;
+    for (i=0; i<size; i++) {
+        printf("%x", str[i]);
+    }
+}
+
 void ocall_print(char *str)
 {
 	// int i;
@@ -43,8 +50,9 @@ void ocall_print(char *str)
 
 void read_session_request(int remote_fd) {
     sgx_dh_msg1_t dh_msg1;
-    uint8_t buf[1024]; //TODO サイズを決める
+    uint8_t buf[1]; //TODO サイズを決める
     uint32_t ret_val;
+    sgx_status_t status;
 
     // read 今回送るデータないけど
     if(read(remote_fd, buf, strlen("a")) < 0){
@@ -52,10 +60,22 @@ void read_session_request(int remote_fd) {
         exit(-1);
     }
 
-    ecall_session_request(master_enclave_id, &ret_val, &dh_msg1);
+    status = ecall_session_request(master_enclave_id, &ret_val, &dh_msg1);
+    if (status!=SGX_SUCCESS) {
+        printf("ecall_session_request failed: Error code is %x\n", status);
+        exit(-1);
+    }
+    if (ret_val != 0) {
+        printf("session_request failure: Error code is %x\n", ret_val);
+        exit(-1);
+    }
+
+    printf("%d\n",sizeof(sgx_dh_msg1_t));
+
+    print_hex((unsigned char *)&dh_msg1, sizeof(sgx_dh_msg1_t));
 
     // send
-    if(write(remote_fd, &dh_msg1, sizeof(dh_msg1)) < 0){
+    if(write(remote_fd, "aaaaaaaaaaaaaaaaa", sizeof(sgx_dh_msg1_t)) < 0){
         fprintf(stderr, "write session req error errno[%d]\n", errno);
         exit(-1);
     }    
@@ -65,13 +85,22 @@ void read_exchange_report (int remote_fd) {
     sgx_dh_msg2_t dh_msg2;
     sgx_dh_msg3_t dh_msg3;
     uint32_t ret_val;
+    sgx_status_t status;
 
     if(read(remote_fd, &dh_msg2, sizeof(dh_msg2)) < 0){
         fprintf(stderr, "read exchange_report req error errno[%d]\n", errno);
         exit(-1);
     }
 
-    ecall_exchange_report(master_enclave_id, &ret_val, dh_msg2, &dh_msg3);
+    status = ecall_exchange_report(master_enclave_id, &ret_val, dh_msg2, &dh_msg3);
+        if (status!=SGX_SUCCESS) {
+        printf("ecall_exchange_report failed: Error code is %x\n", status);
+        exit(-1);
+    }
+    if (ret_val != 0) {
+        printf("exchange_report failure: Error code is %x\n", ret_val);
+        exit(-1);
+    }
 
     // send
     if(write(remote_fd, &dh_msg3, sizeof(dh_msg3)) < 0){
@@ -79,7 +108,6 @@ void read_exchange_report (int remote_fd) {
         exit(-1);
     }
 }
-
 
 void serve (int remote_fd) {
     read_session_request(remote_fd);
