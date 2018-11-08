@@ -34,8 +34,8 @@
 #include <stdio.h>      /* vsnprintf */
 #include <string.h>      /* vsnprintf */
 
-#include "LibEnclave.h"
-#include "LibEnclave_t.h"  /* print_string */
+#include "MasterEnclave.h"
+#include "MasterEnclave_t.h"  /* print_string */
 
 #include "sgx_trts.h"
 #include "sgx_utils.h"
@@ -49,6 +49,8 @@
 
 #include "error_codes.h"
 
+sgx_dh_session_t sgx_dh_session;
+
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -60,7 +62,7 @@ void printf(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, BUFSIZ, fmt, ap);
     va_end(ap);
-    //ocall_print_string(buf);
+    ocall_print(buf);
 }
 
 //Function that is used to verify the trust of the other enclave
@@ -83,11 +85,11 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
 }
 
 //LIB //Handle the request from Source Enclave for a session
-ATTESTATION_STATUS ecall_session_request(sgx_dh_msg1_t * dh_msg1, sgx_dh_session_t * sgx_dh_session)
+ATTESTATION_STATUS ecall_session_request(sgx_dh_msg1_t * dh_msg1)
 {
     sgx_status_t status = SGX_SUCCESS;
 
-    if(!sgx_dh_session || !dh_msg1)
+    if(!dh_msg1)
     {
         return INVALID_PARAMETER_ERROR;
     }
@@ -108,125 +110,91 @@ ATTESTATION_STATUS ecall_session_request(sgx_dh_msg1_t * dh_msg1, sgx_dh_session
 }
 
 //Verify Message 2, generate Message3 and exchange Message 3 with Source Enclave
-ATTESTATION_STATUS exchange_report(sgx_enclave_id_t src_enclave_id,
-                          sgx_dh_msg2_t *dh_msg2,
-                          sgx_dh_msg3_t *dh_msg3,
-                          uint32_t session_id)
+ATTESTATION_STATUS ecall_exchange_report(
+                          sgx_dh_msg2_t dh_msg2,
+                          sgx_dh_msg3_t *dh_msg3)
 {
 
     sgx_key_128bit_t dh_aek;   // Session key
-    dh_session_t *session_info;
     ATTESTATION_STATUS status = SUCCESS;
-    sgx_dh_session_t sgx_dh_session;
     sgx_dh_session_enclave_identity_t initiator_identity;
 
-    if(!dh_msg2 || !dh_msg3)
+    if(!dh_msg3) // dh_msg2 || 
     {
         return INVALID_PARAMETER_ERROR;
     }
 
     memset(&dh_aek,0, sizeof(sgx_key_128bit_t));
-    do
+
+    dh_msg3->msg3_body.additional_prop_length = 0;
+    //Process message 2 from source enclave and obtain message 3
+    sgx_status_t se_ret = sgx_dh_responder_proc_msg2(&dh_msg2, 
+                                                    dh_msg3, 
+                                                    &sgx_dh_session, 
+                                                    &dh_aek, 
+                                                    &initiator_identity);
+    if(SGX_SUCCESS != se_ret)
     {
-        //Retreive the session information for the corresponding source enclave id
-        std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_dest_session_info_map.find(src_enclave_id);
-        if(it != g_dest_session_info_map.end())
-        {
-            session_info = &it->second;
-        }
-        else
-        {
-            status = INVALID_SESSION;
-            break;
-        }
-
-        if(session_info->status != IN_PROGRESS)
-        {
-            status = INVALID_SESSION;
-            break;
-        }
-
-        memcpy(&sgx_dh_session, &session_info->in_progress.dh_session, sizeof(sgx_dh_session_t));
-
-        dh_msg3->msg3_body.additional_prop_length = 0;
-        //Process message 2 from source enclave and obtain message 3
-        sgx_status_t se_ret = sgx_dh_responder_proc_msg2(dh_msg2, 
-                                                       dh_msg3, 
-                                                       &sgx_dh_session, 
-                                                       &dh_aek, 
-                                                       &initiator_identity);
-        if(SGX_SUCCESS != se_ret)
-        {
-            status = se_ret;
-            break;
-        }
-
-        //TASK grapheneが検証 MRENCAVEが master enclave のものか？
-		// initiator_identity.mr_enclave != mr_enclave
-        // mr_enclaveのサイズが全然違う
-        //print_ocall((char*)&dh_msg2->report.body.mr_enclave);
-        //
-
-        //Verify source enclave's trust
-          if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)
-        {
-            return INVALID_SESSION;
-        }
-
-        //save the session ID, status and initialize the session nonce
-        session_info->session_id = session_id;
-        session_info->status = ACTIVE;
-        session_info->active.counter = 0;
-        memcpy(session_info->active.AEK, &dh_aek, sizeof(sgx_key_128bit_t));
-        memset(&dh_aek,0, sizeof(sgx_key_128bit_t));
-        g_session_count++;
-    }while(0);
-
-    if(status != SUCCESS)
-    {
-        end_session(src_enclave_id);
+        return se_ret;
     }
 
-    return status;
-}
+    //TASK grapheneが検証 MRENCAVEが master enclave のものか？
+    // initiator_identity.mr_enclave != mr_enclave
+    // mr_enclaveのサイズが全然違う
+    ocall_print((char*)&dh_msg2.report.body.mr_enclave);
+    //
 
-//Respond to the request from the Source Enclave to close the session
-ATTESTATION_STATUS end_session(sgx_enclave_id_t src_enclave_id)
-{
-    ATTESTATION_STATUS status = SUCCESS;
-    int i;
-    dh_session_t session_info;
-    uint32_t session_id;
-
-    //Get the session information from the map corresponding to the source enclave id
-    std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_dest_session_info_map.find(src_enclave_id);
-    if(it != g_dest_session_info_map.end())
-    {
-        session_info = it->second;
-    }
-    else
+    //Verify source enclave's trust
+        if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)
     {
         return INVALID_SESSION;
     }
 
-    session_id = session_info.session_id;
-    //Erase the session information for the current session
-    g_dest_session_info_map.erase(src_enclave_id);
+    // if(status != SUCCESS)
+    // {
+    //     end_session(src_enclave_id);
+    // }
 
-    //Update the session id tracker
-    if (g_session_count > 0)
-    {
-        //check if session exists
-        for (i=1; i <= MAX_SESSION_COUNT; i++)
-        {
-            if(g_session_id_tracker[i-1] != NULL && g_session_id_tracker[i-1]->session_id == session_id)
-            {
-                memset(g_session_id_tracker[i-1], 0, sizeof(session_id_tracker_t));
-                SAFE_FREE(g_session_id_tracker[i-1]);
-                g_session_count--;
-                break;
-            }
-        }
-    }
     return status;
 }
+
+// //Respond to the request from the Source Enclave to close the session
+// ATTESTATION_STATUS end_session(sgx_enclave_id_t src_enclave_id)
+// {
+//     ATTESTATION_STATUS status = SUCCESS;
+//     int i;
+//     dh_session_t session_info;
+//     uint32_t session_id;
+
+//     //Get the session information from the map corresponding to the source enclave id
+//     std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_dest_session_info_map.find(src_enclave_id);
+//     if(it != g_dest_session_info_map.end())
+//     {
+//         session_info = it->second;
+//     }
+//     else
+//     {
+//         return INVALID_SESSION;
+//     }
+
+//     session_id = session_info.session_id;
+//     //Erase the session information for the current session
+//     g_dest_session_info_map.erase(src_enclave_id);
+
+//     //Update the session id tracker
+//     if (g_session_count > 0)
+//     {
+//         //check if session exists
+//         for (i=1; i <= MAX_SESSION_COUNT; i++)
+//         {
+//             if(g_session_id_tracker[i-1] != NULL && g_session_id_tracker[i-1]->session_id == session_id)
+//             {
+//                 memset(g_session_id_tracker[i-1], 0, sizeof(session_id_tracker_t));
+//                 SAFE_FREE(g_session_id_tracker[i-1]);
+//                 g_session_count--;
+//                 break;
+//             }
+//         }
+//     }
+//     return status;
+// }

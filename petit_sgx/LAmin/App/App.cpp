@@ -37,12 +37,12 @@ void print_ocall(char *str)
 }
 
 //LIB
-ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg1_t* dh_msg1, uint32_t* session_id)
+ATTESTATION_STATUS session_request_ocall(sgx_dh_msg1_t* dh_msg1)
 {
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
 
-	ret = session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
+	ret = session_request(&status, dh_msg1);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	

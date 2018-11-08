@@ -5,6 +5,8 @@
 #include "sgx_dh.h"
 #include <string.h>
 
+#include <pthread.h>
+
 #include "../MasterEnclave/MasterEnclave_u.h"
 
 #include <map>
@@ -42,6 +44,17 @@ uint32_t load_enclaves()
     return SGX_SUCCESS;
 }
 
+void *func_thread(void *p) {
+    //printf("start %d\n", *(int*)p);
+
+    int ret = test_ecall(master_enclave_id, master_enclave_id);
+    if (ret != SGX_SUCCESS) {
+        printf("failed: %x\n", ret);
+    }
+
+    return 0;
+}
+
 int main()
 {
     if(load_enclaves() != SGX_SUCCESS)
@@ -55,6 +68,12 @@ int main()
     if (ret != SGX_SUCCESS) {
         printf("failed: %x\n", ret);
     }
+
+    int b = 42;
+
+    pthread_t pthread;
+    pthread_create(&pthread, NULL, &func_thread, NULL);
+    pthread_join(pthread, NULL);
 
     getchar();
     return 0;

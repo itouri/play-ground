@@ -1,11 +1,18 @@
 #include "sgx_eid.h"
 #include "error_codes.h"
-#include "datatypes.h"
 #include "sgx_urts.h"
 #include "sgx_dh.h"
 #include <string.h>
 
-#include "../MasterEnclave/MasterEnclave_u.h"
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <signal.h>
+
 #include "../LibEnclave/LibEnclave_u.h"
 
 #include "error_codes.h"
@@ -14,73 +21,74 @@
 
 sgx_enclave_id_t vm_enclave_id = 0;
 
-#define VM_ENC_PATH "./emain.so"
+#define VM_ENC_PATH "./libLibenclave.so"
 
-void print_ocall(char *str)
+void ocall_print(char *str)
 {
-	int i;
-	int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
-	printf("\n");
-	for(i = 0; i < size; ++i) {
-		printf("%x ",str[i]);
-	}
-	printf("\n");
-	for(i = 0; i < size; ++i) {
-		printf("%c ",str[i]);
-	}
-	printf("size: %d\n", strlen((const char*)str));
-	fflush(stdout);
+	// int i;
+	// int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
+	// printf("\n");
+	// for(i = 0; i < size; ++i) {
+	// 	printf("%x ",str[i]);
+	// }
+	// printf("\n");
+	// for(i = 0; i < size; ++i) {
+	// 	printf("%c ",str[i]);
+	// }
+	// printf("size: %d\n", strlen((const char*)str));
+	// fflush(stdout);
+    printf("%s", str);
 }
 
+struct sockaddr_un addr;
+int client_fd;
 
-void send_session_request(sgx_dh_session_t * sgx_dh_session) {
-    // send!
+void init_client(const char * unix_domain_path) {
+    client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(client_fd < 0){
+        fprintf(stderr, "socket error errno[%d]\n", errno);
+        exit(-1);
+    }
+
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, unix_domain_path);
+
+    if(connect(client_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0){
+        fprintf(stderr, "connect error errno[%d]\n", errno);
+        exit(-1);
+    }
 }
 
-void read_responce(sgx_dh_msg1_t * msg1, sgx_dh_session_t * sgx_dh_session) {
+ATTESTATION_STATUS ocall_session_request(sgx_dh_msg1_t * dh_msg1) {
+    // send
+    if(write(client_fd, "a", strlen("a")) < 0){
+        fprintf(stderr, "write session req error errno[%d]\n", errno);
+        return UNIX_DOMAIN_SOCKET_EEROR;
+    }
+
     // read
+    if(read(client_fd, dh_msg1, sizeof(dh_msg1) < 0)){
+        fprintf(stderr, "read session req error errno[%d]\n", errno);
+        return UNIX_DOMAIN_SOCKET_EEROR;
+    }
+    return SUCCESS;
 }
 
-//LIB
-ATTESTATION_STATUS ocall_session_request(sgx_dh_session_t * sgx_dh_session)
-{
-	uint32_t status = 0;
-	sgx_status_t ret = SGX_SUCCESS;
+ATTESTATION_STATUS ocall_exchange_report (sgx_dh_msg2_t dh_msg2, sgx_dh_msg3_t * dh_msg3) {
+    // send
+    if(write(client_fd, &dh_msg2, sizeof(dh_msg2)) < 0){
+        fprintf(stderr, "write session req error errno[%d]\n", errno);
+        return UNIX_DOMAIN_SOCKET_EEROR;
+    }
 
-    sgx_dh_msg1_t * msg1;
-
-    // send_session_request
-    send_session_request(sgx_dh_session);
-    read_responce(msg1, *sgx_dh_session);
-
-    // 両方とも書き換える必要はないはず
-    ecall_exchange_report(*msg1, *sgx_dh_session);
-
-	// ret = session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, sgx_dh_session);
-	// if (ret == SGX_SUCCESS)
-	// 	return (ATTESTATION_STATUS)status;
-	// else	
-	//     return INVALID_SESSION;
-
+    // read
+    if(read(client_fd, dh_msg3, sizeof(dh_msg3)) < 0){
+        fprintf(stderr, "read session req error errno[%d]\n", errno);
+        return UNIX_DOMAIN_SOCKET_EEROR;
+    }
+    return SUCCESS;
 }
-
-//Makes an sgx_ecall to the destination enclave sends message2 from the source enclave and gets message 3 from the destination enclave
-ATTESTATION_STATUS ocall_exchange_report(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg2_t *dh_msg2, sgx_dh_msg3_t *dh_msg3, uint32_t session_id)
-{
-	uint32_t status = 0;
-	sgx_status_t ret = SGX_SUCCESS;
-
-
-	ret = exchange_report(dest_enclave_id, &status, src_enclave_id, dh_msg2, dh_msg3, session_id);
-	if (ret == SGX_SUCCESS)
-		return (ATTESTATION_STATUS)status;
-	else	
-	    return INVALID_SESSION;
-
-    return ret;
-}
-
-
 
 uint32_t load_vm_enclave()
 {
@@ -89,7 +97,7 @@ uint32_t load_vm_enclave()
 
     ret = sgx_create_enclave(VM_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &vm_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
-                return ret;
+        return ret;
     }
 
     return SGX_SUCCESS;
@@ -102,19 +110,21 @@ int main()
 
     if(load_vm_enclave() != SGX_SUCCESS)
     {
-        printf("\nLoad Enclave Failure");
+        printf("Load Enclave Failure\n");
     }
 
-    status = ecall_create_session(vm_enclave_id), &ret_status, master_enclave_id, vm_enclave_id);
+    init_client("la.uds");
+
+    status = ecall_create_session(vm_enclave_id, &ret_status);
     if (status!=SGX_SUCCESS) {
-        printf("Enclave1_test_create_session Ecall failed: Error code is %x", status);
+        printf("Enclave1_test_create_session Ecall failed: Error code is %x\n", status);
         return -1;
     }
 
     if (ret_status != 0) {
-        printf("\nSession establishment and key exchange failure between Source (E1) and Destination (E2): Error code is %x", ret_status);
+        printf("Session establishment and key exchange failure: Error code is %x\n", ret_status);
         return -1;
     }
-    printf("\n\nSecure Channel Establishment between Source (E1) and Destination (E2) Enclaves successful !!!");
+    printf("Secure Channel Establishment Enclaves successful !!!\n");
     return 0;
 }

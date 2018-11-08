@@ -50,4 +50,5 @@ typedef uint32_t ATTESTATION_STATUS;
 #define ENCLAVE_TRUST_ERROR              0xED
 #define ENCRYPT_DECRYPT_ERROR            0xEE
 #define DUPLICATE_SESSION                0xEF
+#define UNIX_DOMAIN_SOCKET_EEROR         0xF0
 #endif
