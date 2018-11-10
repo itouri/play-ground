@@ -101,7 +101,7 @@ ATTESTATION_STATUS end_session_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclav
 void print_ocall(char *str)
 {
 	int i;
-	int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
+	int size = strlen((const char*)str);// >= 32 ? 32 : strlen((const char*)str);
 	printf("\n");
 	for(i = 0; i < size; ++i) {
 		printf("%x ",str[i]);

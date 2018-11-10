@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sgx_utils.h>
-
-#include <sgx_key_exchange.h>
-#include <sgx_report.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
+#include<sgx_utils.h>
 
 #ifdef __linux__
 /*
@@ -24,12 +15,12 @@ extern "C" int memset_s(void *s, size_t smax, int c, size_t n)
     int err = 0;
 
     if (s == NULL) {
-        //err = EINVAL;
+        err = EINVAL;
         goto out;
     }
 
     if (n > smax) {
-        //err = EOVERFLOW;
+        err = EOVERFLOW;
         n = smax;
     }
 
@@ -40,7 +31,7 @@ extern "C" int memset_s(void *s, size_t smax, int c, size_t n)
     if (err == 0)
         return 0;
     else {
-        //errno = err;
+        errno = err;
         /* XXX call runtime-constraint handler */
         return err;
     }

@@ -45,6 +45,7 @@
 #include "ias_ra.h"
 
 #include "crypto.h"
+#include "key.h"
 
 #ifndef SAFE_FREE
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr) = NULL;}}
@@ -729,6 +730,9 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
             for (i=0; i < 8; i++) {
                 g_secret[i] = 9;
             }
+
+            // 鍵を送る
+            
 
             // 自分自身で decrypt
             ret = sgx_rijndael128GCM_decrypt(&g_sp_db.sk_key,

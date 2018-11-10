@@ -47,7 +47,7 @@ enclave {
      */
 
      trusted {
-         public void ecall_test([in, string]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in]unsigned char* test_pub_pkey, int sz);
+         public void ecall_test([in, size=enc_len]unsigned char *enc_data, int enc_len, [out]dec_req_data_t *ret_req_data, [in, size=len]unsigned char* prv_key, long len);
      };
 
     /* 

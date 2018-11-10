@@ -78,7 +78,7 @@ uint32_t get_mrenclave()
     //     return ret;
     // }
 
-    //printe("begin printe\n");
+    printe("graphene enlave\n");
     printe((char*)&report.body.mr_enclave);
 }
 
@@ -96,7 +96,7 @@ uint32_t test_create_session(sgx_enclave_id_t src_enclave_id,
         g_src_session_info_map.insert(std::pair<sgx_enclave_id_t, dh_session_t>(dest_enclave_id, dest_session_info));
     }
     memset(&dest_session_info, 0, sizeof(dh_session_t));
-    printe("aaa");
+    printe("aaaa");
     return ke_status;
 }
 

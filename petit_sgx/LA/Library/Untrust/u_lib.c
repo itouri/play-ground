@@ -17,12 +17,14 @@ ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 	uint32_t status = 0;
 	sgx_status_t ret = SGX_SUCCESS;
 
-	ret = GrapheneEnclave_session_request(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
+	ret = session_request_ecall(dest_enclave_id, &status, src_enclave_id, dh_msg1, session_id);
 	if (ret == SGX_SUCCESS)
 		return (ATTESTATION_STATUS)status;
 	else	
 	    return INVALID_SESSION;
 }
+
+
 
 sgx_enclave_id_t init_app(sgx_enclave_id_t * master_enclave_id) {
     const char * enclave_so_path = "emain.so"
@@ -36,9 +38,12 @@ sgx_enclave_id_t init_app(sgx_enclave_id_t * master_enclave_id) {
     if ( ret != SGX_SUCESS ) {
         perror("failed sgx_create_enclave: %x\n" ret);
     }
+<<<<<<< HEAD
 
     
 
+=======
+>>>>>>> 726c3bff0bf977c8b396da028e8ce3f28358b3fb
     return enclave_id;
 }
 
