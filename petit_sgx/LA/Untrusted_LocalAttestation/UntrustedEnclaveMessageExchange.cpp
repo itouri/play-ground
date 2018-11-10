@@ -53,8 +53,8 @@ ATTESTATION_STATUS session_request_ocall(sgx_enclave_id_t src_enclave_id, sgx_en
 		return (ATTESTATION_STATUS)status;
 	else	
 	    return INVALID_SESSION;
-
 }
+
 //Makes an sgx_ecall to the destination enclave sends message2 from the source enclave and gets message 3 from the destination enclave
 ATTESTATION_STATUS exchange_report_ocall(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, sgx_dh_msg2_t *dh_msg2, sgx_dh_msg3_t *dh_msg3, uint32_t session_id)
 {
