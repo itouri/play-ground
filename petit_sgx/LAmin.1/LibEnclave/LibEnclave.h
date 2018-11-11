@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,19 +29,21 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "../Include/datatypes.h"
-    include "../Include/dh_session_protocol.h"
-    trusted{
-        public uint32_t ecall_create_session();
-    };
 
-    untrusted{
-        uint32_t ocall_session_request([in, out] sgx_dh_msg1_t * sgx_dh_msg1);
-        uint32_t ocall_exchange_report(sgx_dh_msg2_t dh_msg2, [in, out] sgx_dh_msg3_t *dh_msg3);
+#ifndef _ENCLAVE_H_
+#define _ENCLAVE_H_
 
-        // added
-        void ocall_print([in, string] char *str);
-    };
-};
+#include <stdlib.h>
+#include <assert.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void printf(const char *fmt, ...);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* !_ENCLAVE_H_ */

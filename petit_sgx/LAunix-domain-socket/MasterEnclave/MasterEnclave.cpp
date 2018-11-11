@@ -65,6 +65,14 @@ void printf(const char *fmt, ...)
     ocall_print(buf);
 }
 
+void print_hex(uint8_t * str, size_t size) {
+    int i;
+    for (i=0; i<size; i++) {
+        printf("%x", str[i]);
+    }
+    printf("\n");
+}
+
 //Function that is used to verify the trust of the other enclave
 //Each enclave can have its own way verifying the peer enclave identity
 extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t* peer_enclave_identity)
@@ -101,11 +109,12 @@ ATTESTATION_STATUS ecall_session_request(sgx_dh_msg1_t * dh_msg1)
     }
 
     //Generate Message1 that will be returned to Source Enclave
-    status = sgx_dh_responder_gen_msg1(dh_msg1, &sgx_dh_session);
+    status = sgx_dh_responder_gen_msg1((sgx_dh_msg1_t*)dh_msg1, &sgx_dh_session);
     if(SGX_SUCCESS != status)
     {
         return status;
     }
+
     return status;
 }
 
@@ -141,11 +150,11 @@ ATTESTATION_STATUS ecall_exchange_report(
     //TASK grapheneが検証 MRENCAVEが master enclave のものか？
     // initiator_identity.mr_enclave != mr_enclave
     // mr_enclaveのサイズが全然違う
-    ocall_print((char*)&dh_msg2.report.body.mr_enclave);
+    printf((char*)&dh_msg2.report.body.mr_enclave);
     //
 
     //Verify source enclave's trust
-        if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)
+    if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)
     {
         return INVALID_SESSION;
     }

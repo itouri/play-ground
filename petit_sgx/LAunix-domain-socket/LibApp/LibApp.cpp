@@ -28,22 +28,11 @@ void print_hex(uint8_t * str, size_t size) {
     for (i=0; i<size; i++) {
         printf("%x", str[i]);
     }
+    printf("\n");
 }
 
 void ocall_print(char *str)
 {
-	// int i;
-	// int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
-	// printf("\n");
-	// for(i = 0; i < size; ++i) {
-	// 	printf("%x ",str[i]);
-	// }
-	// printf("\n");
-	// for(i = 0; i < size; ++i) {
-	// 	printf("%c ",str[i]);
-	// }
-	// printf("size: %d\n", strlen((const char*)str));
-	// fflush(stdout);
     printf("%s", str);
 }
 
@@ -74,28 +63,24 @@ ATTESTATION_STATUS ocall_session_request(sgx_dh_msg1_t * dh_msg1) {
         return UNIX_DOMAIN_SOCKET_EEROR;
     }
 
-    printf("%d",sizeof(sgx_dh_msg1_t));
-
     // read
-    if(read(client_fd, dh_msg1, sizeof(sgx_dh_msg1_t) < 0)){
+    if( read(client_fd, dh_msg1, sizeof(sgx_dh_msg1_t)) < 0 ){
         fprintf(stderr, "read session req error errno[%d]\n", errno);
         return UNIX_DOMAIN_SOCKET_EEROR;
     }
-
-    print_hex((unsigned char *)dh_msg1, sizeof(sgx_dh_msg1_t));
-
     return SUCCESS;
 }
 
-ATTESTATION_STATUS ocall_exchange_report (sgx_dh_msg2_t dh_msg2, sgx_dh_msg3_t * dh_msg3) {
+ATTESTATION_STATUS ocall_exchange_report (sgx_dh_msg2_t dh_msg2, sgx_dh_msg3_t * dh_msg3)
+{
     // send
-    if(write(client_fd, &dh_msg2, sizeof(dh_msg2)) < 0){
+    if( write(client_fd, &dh_msg2, sizeof(sgx_dh_msg2_t)) < 0 ){
         fprintf(stderr, "write session req error errno[%d]\n", errno);
         return UNIX_DOMAIN_SOCKET_EEROR;
     }
 
     // read
-    if(read(client_fd, dh_msg3, sizeof(sgx_dh_msg3_t)) < 0){
+    if( read(client_fd, dh_msg3, sizeof(sgx_dh_msg3_t)) < 0 ){
         fprintf(stderr, "read session req error errno[%d]\n", errno);
         return UNIX_DOMAIN_SOCKET_EEROR;
     }
@@ -127,16 +112,21 @@ int main()
 
     init_client("la.uds");
 
+    printf("id: %ld\n", (uint64_t)vm_enclave_id);
+
     status = ecall_create_session(vm_enclave_id, &ret_status);
     if (status!=SGX_SUCCESS) {
         printf("Enclave1_test_create_session Ecall failed: Error code is %x\n", status);
+        sgx_destroy_enclave(vm_enclave_id);
         return -1;
     }
 
     if (ret_status != 0) {
         printf("Session establishment and key exchange failure: Error code is %x\n", ret_status);
+        sgx_destroy_enclave(vm_enclave_id);
         return -1;
     }
+    sgx_destroy_enclave(vm_enclave_id);
     printf("Secure Channel Establishment Enclaves successful !!!\n");
     return 0;
 }

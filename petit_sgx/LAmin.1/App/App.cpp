@@ -20,20 +20,9 @@ std::map<sgx_enclave_id_t, uint32_t>g_enclave_id_map;
 #define MASTER_ENC_PATH "libMasterenclave.so"
 #define LIB_ENC_PATH "libLibenclave.so"
 
-void print_ocall(char *str)
+void ocall_print_string(char *str)
 {
-	int i;
-	int size = strlen((const char*)str) >= 32 ? 32 : strlen((const char*)str);
-	printf("\n");
-	for(i = 0; i < size; ++i) {
-		printf("%x ",str[i]);
-	}
-	printf("\n");
-	for(i = 0; i < size; ++i) {
-		printf("%c ",str[i]);
-	}
-	printf("size: %d\n", strlen((const char*)str));
-	fflush(stdout);
+	printf("%s",str);
 }
 
 //LIB
