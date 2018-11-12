@@ -16,7 +16,7 @@
  *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT N-OT
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -29,17 +29,40 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "sgx_dh.h"
-    
-    trusted{
-        public uint32_t ecall_session_request([in,out] sgx_dh_msg1_t *dh_msg1);
-        public uint32_t ecall_exchange_report(sgx_dh_msg2_t dh_msg2, [in,out] sgx_dh_msg3_t *dh_msg3);
-    };
+#ifndef _DH_SESSION_PROROCOL_H
+#define _DH_SESSION_PROROCOL_H
 
-    untrusted{
-        // added
-        void ocall_print([in, string] char *str);
+#include "sgx_ecp_types.h"
+#include "sgx_key.h"
+#include "sgx_report.h"
+#include "sgx_attributes.h"
+
+#define NONCE_SIZE         16
+#define MAC_SIZE           16
+
+#define MSG_BUF_LEN        sizeof(ec_pub_t)*2
+#define MSG_HASH_SZ        32
+
+
+//Session information structure
+typedef struct _la_dh_session_t
+{
+    uint32_t  session_id; //Identifies the current session
+    uint32_t  status; //Indicates session is in progress, active or closed
+    union
+    {
+        struct
+        {
+			sgx_dh_session_t dh_session;
+        }in_progress;
+
+        struct
+        {
+            sgx_key_128bit_t AEK; //Session Key
+            uint32_t counter; //Used to store Message Sequence Number
+        }active;
     };
-};
+} dh_session_t;
+
+
+#endif

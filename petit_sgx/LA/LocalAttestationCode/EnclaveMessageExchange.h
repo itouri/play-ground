@@ -16,7 +16,7 @@
  *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT N-OT
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -29,17 +29,28 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "sgx_dh.h"
-    
-    trusted{
-        public uint32_t ecall_session_request([in,out] sgx_dh_msg1_t *dh_msg1);
-        public uint32_t ecall_exchange_report(sgx_dh_msg2_t dh_msg2, [in,out] sgx_dh_msg3_t *dh_msg3);
-    };
 
-    untrusted{
-        // added
-        void ocall_print([in, string] char *str);
-    };
-};
+#include "datatypes.h"
+#include "sgx_eid.h"
+#include "sgx_trts.h"
+#include <map>
+#include "dh_session_protocol.h"
+
+#ifndef LOCALATTESTATION_H_
+#define LOCALATTESTATION_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+uint32_t SGXAPI create_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, dh_session_t *p_session_info);
+uint32_t SGXAPI send_request_receive_response(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id, dh_session_t *p_session_info, char *inp_buff, size_t inp_buff_len, size_t max_out_buff_size, char **out_buff, size_t* out_buff_len);
+uint32_t SGXAPI close_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
+
+void printe(char *str);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

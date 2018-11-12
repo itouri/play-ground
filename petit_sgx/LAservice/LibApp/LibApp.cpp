@@ -19,11 +19,11 @@
 
 #include <map>
 
-#define VM_ENC_PATH "./libLibenclave.so"
+#define VM_ENC_PATH "./libVMenclave.so"
 
 sgx_enclave_id_t vm_enclave_id = 0;
 
-extern void do_main(void);
+extern void do_main(sgx_enclave_id_t);
 
 void print_hex(uint8_t * str, size_t size) {
     int i;
@@ -89,9 +89,10 @@ ATTESTATION_STATUS ocall_exchange_report (sgx_dh_msg2_t dh_msg2, sgx_dh_msg3_t *
     return SUCCESS;
 }
 
-uint32_t load_vm_enclave()
+sgx_status_t load_vm_enclave()
 {
-    int ret, launch_token_updated;
+    sgx_status_t ret;
+    int launch_token_updated;
     sgx_launch_token_t launch_token;
 
     ret = sgx_create_enclave(VM_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &vm_enclave_id, NULL);
@@ -103,37 +104,25 @@ uint32_t load_vm_enclave()
 }
 
 int main()
+//int la(sgx_enclave_id_t enclave_id)
 {
     uint32_t ret_status;
     sgx_status_t status;
 
-    if(load_vm_enclave() != SGX_SUCCESS)
-    {
-        printf("Load Enclave Failure\n");
-    }
-
     init_client("la.uds");
 
-    printf("id: %ld\n", (uint64_t)vm_enclave_id);
-
-    status = ecall_create_session(vm_enclave_id, &ret_status);
+    status = load_vm_enclave();
     if (status!=SGX_SUCCESS) {
-        printf("Enclave1_test_create_session Ecall failed: Error code is %x\n", status);
-        sgx_destroy_enclave(vm_enclave_id);
-        return -1;
-    }
-
-    if (ret_status != 0) {
-        printf("Session establishment and key exchange failure: Error code is %x\n", ret_status);
-        sgx_destroy_enclave(vm_enclave_id);
+        printf("load_vm_enclave failed: Error code is %x\n", status);
+        //sgx_destroy_enclave(enclave_id);
         return -1;
     }
 
     /* calling main */
-    void (*func)() = do_main();
-    (*func)();
+    void (*func)(sgx_enclave_id_t) = do_main;
+    (*func)(vm_enclave_id);
+    do_main(vm_enclave_id);
 
-    sgx_destroy_enclave(vm_enclave_id);
-    printf("Secure Channel Establishment Enclaves successful !!!\n");
+    // sgx_destroy_enclave(vm_enclave_id);
     return 0;
 }

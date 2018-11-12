@@ -43,7 +43,6 @@
 #include "sgx_ecp_types.h"
 #include "sgx_thread.h"
 #include <map>
-#include "dh_session_protocol.h"
 #include "sgx_dh.h"
 #include "sgx_tcrypto.h"
 
@@ -166,44 +165,3 @@ ATTESTATION_STATUS ecall_exchange_report(
 
     return status;
 }
-
-// //Respond to the request from the Source Enclave to close the session
-// ATTESTATION_STATUS end_session(sgx_enclave_id_t src_enclave_id)
-// {
-//     ATTESTATION_STATUS status = SUCCESS;
-//     int i;
-//     dh_session_t session_info;
-//     uint32_t session_id;
-
-//     //Get the session information from the map corresponding to the source enclave id
-//     std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_dest_session_info_map.find(src_enclave_id);
-//     if(it != g_dest_session_info_map.end())
-//     {
-//         session_info = it->second;
-//     }
-//     else
-//     {
-//         return INVALID_SESSION;
-//     }
-
-//     session_id = session_info.session_id;
-//     //Erase the session information for the current session
-//     g_dest_session_info_map.erase(src_enclave_id);
-
-//     //Update the session id tracker
-//     if (g_session_count > 0)
-//     {
-//         //check if session exists
-//         for (i=1; i <= MAX_SESSION_COUNT; i++)
-//         {
-//             if(g_session_id_tracker[i-1] != NULL && g_session_id_tracker[i-1]->session_id == session_id)
-//             {
-//                 memset(g_session_id_tracker[i-1], 0, sizeof(session_id_tracker_t));
-//                 SAFE_FREE(g_session_id_tracker[i-1]);
-//                 g_session_count--;
-//                 break;
-//             }
-//         }
-//     }
-//     return status;
-// }

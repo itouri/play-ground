@@ -31,8 +31,8 @@
 
 
 #include <stdarg.h>
-#include <stdio.h>      /* vsnprintf */
-#include <string.h>      /* vsnprintf */
+#include <stdio.h>      /* vsnlib_printf */
+#include <string.h>      /* vsnlib_printf */
 
 #include "sgx_trts.h"
 #include "sgx_utils.h"
@@ -49,10 +49,10 @@
 #include "error_codes.h"
 
 /* 
- * printf: 
+ * lib_printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
  */
-void printf(const char *fmt, ...)
+void lib_printf(const char *fmt, ...)
 {
     char buf[BUFSIZ] = {'\0'};
     va_list ap;
@@ -65,9 +65,9 @@ void printf(const char *fmt, ...)
 void print_hex(uint8_t * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        printf("%x", str[i]);
+        lib_printf("%x", str[i]);
     }
-    printf("\n");
+    lib_printf("\n");
 }
 
 //Function that is used to verify the trust of the other enclave
@@ -90,7 +90,8 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
 }
 
 //Create a session with the destination enclave
-ATTESTATION_STATUS ecall_create_session()
+//ATTESTATION_STATUS ecall_create_session()
+ATTESTATION_STATUS create_session()
 {
     sgx_dh_msg1_t dh_msg1;            //Diffie-Hellman Message 1
     sgx_key_128bit_t dh_aek;        // Session Key
@@ -110,7 +111,7 @@ ATTESTATION_STATUS ecall_create_session()
     status = sgx_dh_init_session(SGX_DH_SESSION_INITIATOR, &sgx_dh_session);
     if(SGX_SUCCESS != status)
     {
-        printf("failed sgx_dh_init_session\n");
+        lib_printf("failed sgx_dh_init_session\n");
         return status;
     }
 
@@ -128,7 +129,7 @@ ATTESTATION_STATUS ecall_create_session()
     status = sgx_dh_initiator_proc_msg1(&dh_msg1, &dh_msg2, &sgx_dh_session);
     if(SGX_SUCCESS != status)
     {
-        printf("failed sgx_dh_initiator_proc_msg1?: %x\n", status);
+        lib_printf("failed sgx_dh_initiator_proc_msg1?: %x\n", status);
         return status;
     }
 
@@ -148,7 +149,7 @@ ATTESTATION_STATUS ecall_create_session()
     status = sgx_dh_initiator_proc_msg3(&dh_msg3, &sgx_dh_session, &dh_aek, &responder_identity);
     if(SGX_SUCCESS != status)
     {
-        printf("failed sgx_dh_initiator_proc_msg3\n");
+        lib_printf("failed sgx_dh_initiator_proc_msg3\n");
         return status;
     }
 
@@ -163,44 +164,6 @@ ATTESTATION_STATUS ecall_create_session()
     return status;
 }
 
-// 何に使う？
-// //Respond to the request from the Source Enclave to close the session
-// ATTESTATION_STATUS end_session(sgx_enclave_id_t src_enclave_id)
-// {
-//     ATTESTATION_STATUS status = SUCCESS;
-//     int i;
-//     dh_session_t session_info;
-//     uint32_t session_id;
-
-//     //Get the session information from the map corresponding to the source enclave id
-//     std::map<sgx_enclave_id_t, dh_session_t>::iterator it = g_dest_session_info_map.find(src_enclave_id);
-//     if(it != g_dest_session_info_map.end())
-//     {
-//         session_info = it->second;
-//     }
-//     else
-//     {
-//         return INVALID_SESSION;
-//     }
-
-//     session_id = session_info.session_id;
-//     //Erase the session information for the current session
-//     g_dest_session_info_map.erase(src_enclave_id);
-
-//     //Update the session id tracker
-//     if (g_session_count > 0)
-//     {
-//         //check if session exists
-//         for (i=1; i <= MAX_SESSION_COUNT; i++)
-//         {
-//             if(g_session_id_tracker[i-1] != NULL && g_session_id_tracker[i-1]->session_id == session_id)
-//             {
-//                 memset(g_session_id_tracker[i-1], 0, sizeof(session_id_tracker_t));
-//                 SAFE_FREE(g_session_id_tracker[i-1]);
-//                 g_session_count--;
-//                 break;
-//             }
-//         }
-//     }
-//     return status;
-// }
+void why () {
+    lib_printf("???\n");
+}

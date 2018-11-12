@@ -1,4 +1,4 @@
-enclave.so
+VMEnclave.so
 {
     global:
         g_global_data_sim;

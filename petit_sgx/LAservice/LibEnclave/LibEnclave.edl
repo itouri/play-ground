@@ -31,10 +31,11 @@
 
 enclave  {
     include "sgx_eid.h"
-    include "../Include/datatypes.h"
-    include "../Include/dh_session_protocol.h"
+    include "sgx_dh.h"
+
     trusted{
-        public uint32_t ecall_create_session();
+        // public uint32_t ecall_create_session();
+        public void why();
     };
 
     untrusted{

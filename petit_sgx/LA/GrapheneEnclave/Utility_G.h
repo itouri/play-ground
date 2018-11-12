@@ -16,7 +16,7 @@
  *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT N-OT
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -29,17 +29,31 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "sgx_dh.h"
-    
-    trusted{
-        public uint32_t ecall_session_request([in,out] sgx_dh_msg1_t *dh_msg1);
-        public uint32_t ecall_exchange_report(sgx_dh_msg2_t dh_msg2, [in,out] sgx_dh_msg3_t *dh_msg3);
-    };
+#ifndef UTILITY_E2_H__
+#define UTILITY_E2_H__
+#include "stdint.h"
 
-    untrusted{
-        // added
-        void ocall_print([in, string] char *str);
-    };
-};
+typedef struct _param_struct_t
+{
+    uint32_t var1;
+    uint32_t var2;
+}param_struct_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+uint32_t marshal_input_parameters_e3_foo1(uint32_t target_fn_id, uint32_t msg_type, param_struct_t *p_struct_var, char** marshalled_buff, size_t* marshalled_buff_len);
+uint32_t unmarshal_retval_and_output_parameters_e3_foo1(char* out_buff, param_struct_t *p_struct_var, char** retval);
+uint32_t unmarshal_input_parameters_e2_foo1(uint32_t* var1, uint32_t* var2, ms_in_msg_exchange_t* ms);
+uint32_t marshal_retval_and_output_parameters_e2_foo1(char** resp_buffer, size_t* resp_length, uint32_t retval);
+uint32_t marshal_message_exchange_request(uint32_t target_fn_id, uint32_t msg_type, uint32_t secret_data, char** marshalled_buff, size_t* marshalled_buff_len);
+uint32_t umarshal_message_exchange_request(uint32_t* inp_secret_data, ms_in_msg_exchange_t* ms);
+uint32_t marshal_message_exchange_response(char** resp_buffer, size_t* resp_length, uint32_t secret_response);
+uint32_t umarshal_message_exchange_response(char* out_buff, char** secret_response);
+
+#ifdef __cplusplus
+ }
+#endif
+#endif
+
