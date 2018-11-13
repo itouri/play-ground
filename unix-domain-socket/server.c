@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 
-#define FILE_PATH "./unix_domain.uds"
+#define FILE_PATH "/tmp/sgx/unix_domain.uds"
 
 void print_hex(uint8_t * data, size_t size) {
     int i;
