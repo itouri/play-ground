@@ -26,6 +26,7 @@
 sgx_enclave_id_t vm_enclave_id = 0;
 
 extern void do_main(sgx_enclave_id_t);
+extern void get_mrenclave(sgx_enclave_id_t);
 
 void print_hex(uint8_t * str, size_t size) {
     int i;
@@ -46,17 +47,17 @@ int client_fd;
 void init_client(const char * unix_domain_path) {
     client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if(client_fd < 0){
-        fprintf(stderr, "socket error errno[%d]\n", errno);
+        fprintf(stderr, "lib_app: socket error errno[%d]\n", errno);
         exit(-1);
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     //strcpy(addr.sun_path, unix_domain_path);
-    strcpy(addr.sun_path, "/tmp/compute/socket/tmp-vm.uds");
+    strcpy(addr.sun_path, unix_domain_path);
 
     if(connect(client_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0){
-        fprintf(stderr, "connect error errno[%d]\n", errno);
+        fprintf(stderr, "lib_app: connect error errno[%d]\n", errno);
         exit(-1);
     }
 }
@@ -112,26 +113,24 @@ int main(int argc, char *argv[])
     uint32_t ret_status;
     sgx_status_t status;
 
-    // if ( argc != 2 ) {
-    //     printf("don't define socket path\n");
-    //     return -1;
-    // }
-
-    char socket_path[256];
-    strcat(socket_path, LA_SOCK_PATH);
-    strcat(socket_path, argv[1]);
-    printf("vm_app socket path: %s\n", socket_path);
-
-    init_client(socket_path);
-
-    printf("vm_app socket path: %s\n", socket_path);
-
     status = load_vm_enclave();
     if (status!=SGX_SUCCESS) {
-        printf("load_vm_enclave failed: Error code is %x\n", status);
+        printf("lib_app: load_vm_enclave failed: Error code is %x\n", status);
         //sgx_destroy_enclave(enclave_id);
         return -1;
     }
+
+    // get mrenclve
+    if ( argc == 1 ) {
+        void (*func)(sgx_enclave_id_t) = get_mrenclave;
+        (*func)(vm_enclave_id);
+        return 0;
+    }
+
+    char * socket_path = argv[1];
+    printf("lib_app: vm_app socket path: %s\n", socket_path);
+
+    init_client(socket_path);
 
     /* calling main */
     void (*func)(sgx_enclave_id_t) = do_main;

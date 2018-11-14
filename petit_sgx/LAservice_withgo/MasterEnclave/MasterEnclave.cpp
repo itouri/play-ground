@@ -65,10 +65,10 @@ void printf(const char *fmt, ...)
     ocall_print(buf);
 }
 
-void print_hex(uint8_t * str, size_t size) {
+void print_hex(unsigned char * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        printf("%x", str[i]);
+        printf("%x ", str[i]);
     }
     printf("\n");
 }
@@ -149,7 +149,7 @@ ATTESTATION_STATUS ecall_exchange_report(
     }
 
     /* imd と crm の検証 */
-    printf((char*)&dh_msg2.report.body.mr_enclave);
+    print_hex((unsigned char *)&dh_msg2.report.body.mr_enclave, sizeof(sgx_measurement_t));
     //
 
     //Verify source enclave's trust

@@ -15,6 +15,10 @@ void printf(const char *fmt, ...)
     ocall_print_vm(buf);
 }
 
+void ecall_get_mr_enclave() {
+    get_mr_enclave();
+}
+
 uint32_t ecall_init() {
     create_session();
     return 0;

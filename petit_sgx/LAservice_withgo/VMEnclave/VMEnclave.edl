@@ -34,6 +34,7 @@ enclave  {
     trusted{
         public uint32_t ecall_init();
         public void ecall_test();
+        public void ecall_get_mr_enclave();
     };
 
     untrusted{

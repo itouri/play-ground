@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-typedef uint8_t image_id_t[36];
+typedef uint8_t image_id_t[16];
 
 typedef struct _la_arg_t {
     uint8_t * imd;

@@ -62,10 +62,10 @@ void lib_printf(const char *fmt, ...)
     ocall_print(buf);
 }
 
-void print_hex(uint8_t * str, size_t size) {
+void print_hex(unsigned char * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        lib_printf("%x", str[i]);
+        lib_printf("%x ", str[i]);
     }
     lib_printf("\n");
 }
@@ -162,6 +162,20 @@ ATTESTATION_STATUS create_session()
         return INVALID_SESSION;
     }
     return status;
+}
+
+void get_mr_enclave () {
+    sgx_report_t report;
+    sgx_status_t ret;
+
+    //printe("begin sgx_create_report\n");
+    ret = sgx_create_report(NULL, NULL, &report);
+    if ( ret != SGX_SUCCESS )
+    {
+        lib_printf("failed sgx_create_repor: %x\n", ret);
+        // return ret;
+    }
+    print_hex((unsigned char*)&report.body.mr_enclave, sizeof(sgx_measurement_t));
 }
 
 void why () {

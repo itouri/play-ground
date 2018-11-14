@@ -121,14 +121,14 @@ void *run_la_server (void * void_arg) {
     signal(SIGPIPE, SIG_IGN);
     listen_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     local.sun_family = AF_UNIX;
-    strcpy(local.sun_path, "/tmp/compute/socket/tmp-vm.uds"); //(const char *)arg->socket_path);
+    strcpy(local.sun_path, (const char *)arg->socket_path); //(const char *)arg->socket_path);
     unlink(local.sun_path);
     r = bind(listen_fd, (struct sockaddr *)&local, sizeof(local));
     if (r)
         perror("la: failed to bind");
 
     listen(listen_fd, 100);
-    printf("la: server start at %s\n", "/tmp/compute/socket/tmp-vm.uds");//TODO
+    printf("la: server start at %s\n", arg->socket_path);//TODO
     for (;;) {
         socklen_t len = sizeof(remote);
         int remote_fd = accept(listen_fd, (struct sockaddr *)&remote, &len);
@@ -162,11 +162,11 @@ void launch_vm (image_id_t image_id, la_arg_t arg)
     uuid_generate(socket_uuid);
     uuid_unparse(socket_uuid, socket_id);
 
-    char socket_path[256];
-    strcat(socket_path, LA_SOCK_PATH);
-    //strcat(socket_path, (const char*)&socket_id);
-    strcat(socket_path, "tmp-vm.uds"); //(const char*)image_id); //TODO!
-    printf("vm_cpp socket_path: %s\n", "/tmp/compute/socket/tmp-vm.uds");
+    char socket_path[256] = LA_SOCK_PATH;
+    //strcat(socket_path, LA_SOCK_PATH);
+    strcat(socket_path, (const char*)&socket_id);
+    strcat(socket_path, ".uds"); //(const char*)image_id); //TODO!
+    printf("vm_cpp socket_path: %s\n", socket_path);
 
     la_server_arg_t * th_arg = (la_server_arg_t*)malloc(sizeof(la_server_arg_t));
     th_arg->socket_path = (unsigned char*)socket_path;
@@ -175,15 +175,19 @@ void launch_vm (image_id_t image_id, la_arg_t arg)
     pthread_t pthread;
     pthread_create(&pthread, NULL, &run_la_server, (void*)th_arg);
 
-    char vm_app_path[256];
-    strcat(vm_app_path, IMAGE_PATH);
-    strcat(vm_app_path, "tmp-vm");//(const char*)image_id);
-    strcat(vm_app_path, "vm_app");
-    printf("vm_app_path: %s\n", "./vm_app");
+    //char vm_app_path[256] = IMAGE_PATH;
+    char vm_app_path[256] = ".";
+    //strcat(vm_app_path, (const char*)image_id);
+    strcat(vm_app_path, "/vm_app");
+    printf("vm_app_path: %s\n", vm_app_path);
 
-    //execl(vm_app_path, socket_path, "> stdout.log", NULL);
-    //execl("./vm_app /tmp/compute/socket/tmp-vm.uds > stdout.log", NULL);
-    system("./vm_app l");
+    char cmd[512] = "";
+    strcat(cmd, vm_app_path);
+    strcat(cmd, " ");
+    strcat(cmd, socket_path);
+    printf("command: %s\n", cmd);
+
+    system(cmd);
 
     //pthread_join(pthread, NULL);
 }
@@ -200,7 +204,8 @@ void go_serve (int remote_fd) {
     int n;
     n = read(remote_fd, buf, sizeof buf);
     if (n < 0) {
-        perror("read length is zero");
+        perror(
+            "read length is zero");
         return;
     }
     memcpy(&image_id, buf, sizeof(image_id_t));
@@ -226,7 +231,7 @@ void go_serve (int remote_fd) {
     la_arg.imd = image_metadata;
     la_arg.imd_sz = image_metadata_size;
     la_arg.crm = create_req_metadata;
-    la_arg.crm_sz = create_req_metadata_size;
+    la_arg.crm_sz = create_req_metadata_size; 
 
     launch_vm(image_id, la_arg);
 
@@ -235,9 +240,9 @@ void go_serve (int remote_fd) {
     printf("image_metadata_size: %d\n", image_metadata_size);
     printf("create_req_metadata_size: %d\n", create_req_metadata_size);
     
-    // print_hex((uint8_t*)&image_id, sizeof(image_id_t));
-    // print_hex(image_metadata, image_metadata_size);
-    // print_hex(create_req_metadata, create_req_metadata_size);
+    print_hex((uint8_t*)&image_id, sizeof(image_id_t));
+    print_hex(image_metadata, image_metadata_size);
+    print_hex(create_req_metadata, create_req_metadata_size);
 }
 
 void run_go_server ()

@@ -32,6 +32,7 @@
 enclave  {
     from "../LibEnclave/LibEnclave.edl" import *;
     trusted{
+        public ecall_get_mr_enclave();
         public uint32_t ecall_init();
         public void ecall_test();
     };
