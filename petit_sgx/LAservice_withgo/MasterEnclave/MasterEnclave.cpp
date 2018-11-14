@@ -122,7 +122,7 @@ ATTESTATION_STATUS ecall_session_request(sgx_dh_msg1_t * dh_msg1)
 ATTESTATION_STATUS ecall_exchange_report(
                           sgx_dh_msg2_t dh_msg2,
                           sgx_dh_msg3_t *dh_msg3,
-                          la_server_arg_t la_arg)
+                          la_arg_t la_arg)
 {
 
     sgx_key_128bit_t dh_aek;   // Session key
@@ -148,9 +148,19 @@ ATTESTATION_STATUS ecall_exchange_report(
         return se_ret;
     }
 
+    image_metadata_t imd;
+    memset(&imd, 0, sizeof(image_metadata_t));
+    memcpy(&imd, (const void *)la_arg.imd, sizeof(image_metadata_t));
+
     /* imd と crm の検証 */
+    printf("--- reported enclave ---\n");
     print_hex((unsigned char *)&dh_msg2.report.body.mr_enclave, sizeof(sgx_measurement_t));
-    //
+
+    printf("--- image enclave ---\n");
+    print_hex((unsigned char *)&imd.mrenclave, sizeof(sgx_measurement_t));
+
+    printf("--- imd ---\n");
+    print_hex((unsigned char *)&imd, sizeof(image_metadata_t));
 
     //Verify source enclave's trust
     if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)

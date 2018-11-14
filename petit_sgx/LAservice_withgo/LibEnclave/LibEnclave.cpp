@@ -65,9 +65,8 @@ void lib_printf(const char *fmt, ...)
 void print_hex(unsigned char * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        lib_printf("%x ", str[i]);
+        lib_printf("%02x", str[i]);
     }
-    lib_printf("\n");
 }
 
 //Function that is used to verify the trust of the other enclave

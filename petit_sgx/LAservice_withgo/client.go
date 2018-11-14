@@ -1,11 +1,15 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
+	"os/exec"
 
+	nonce "github.com/LarryBattle/nonce-golang"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +25,49 @@ func Uint2bytes(i uint32) []byte {
 	return bytes
 }
 
-func VMCreate(imageID uuid.UUID, imageMetadata []byte, createReqMetadata []byte) error {
+func createRequestMetadata(clientUUID uuid.UUID) ([]byte, error) {
+	var crm []byte
+
+	clientID, err := clientUUID.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := nonce.NewToken()
+	hmac := sha256.Sum256(crm)
+
+	crm = append(crm, clientID...)
+	crm = append(crm, nonce...)
+	crm = append(crm, hmac[:]...)
+
+	fmt.Printf("--- createRequestMetadata ---\n")
+	fmt.Printf("clentID : %v\n", clientID)
+	fmt.Printf("nonce   : %v\n", nonce)
+	fmt.Printf("hmac    : %v\n", hmac[:])
+
+	return crm, nil
+}
+
+func createImageMetadata(clientUUID uuid.UUID, mrenclave []byte) ([]byte, error) {
+	var imd []byte
+	clientID, err := clientUUID.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	imd = append(imd, clientID...)
+	imd = append(imd, mrenclave...)
+	hmac := sha256.Sum256(imd)
+	imd = append(imd, hmac[:]...)
+
+	fmt.Printf("--- createImageMetadata ---\n")
+	fmt.Printf("clentID   : %v\n", clientID)
+	fmt.Printf("mrenclave : %v\n", mrenclave)
+	fmt.Printf("hmac      : %v\n", hmac[:])
+
+	return imd, nil
+}
+
+func VMCreate(imageUUID uuid.UUID) error {
 	conn, err := net.Dial("unix", filePath)
 	if err != nil {
 		log.Printf("error: % \n", err)
@@ -29,31 +75,60 @@ func VMCreate(imageID uuid.UUID, imageMetadata []byte, createReqMetadata []byte)
 	}
 	defer conn.Close()
 
-	hex, err := imageID.MarshalBinary()
+	appPath := "./vm_app"
+	out, err := exec.Command(appPath).Output()
 
-	//message := ""
-	// var eid uint64
-	// eid = 0x1
-	// eidStr := string([]byte(strconv.FormatUint(uint64(eid), 16)))
+	/* image_id */
+	imageID, err := imageUUID.MarshalBinary()
+	if err != nil {
+		return err
+	}
 
-	message := hex
-	is := uint32(len(imageMetadata))
-	message = append(message, Uint2bytes(is)...)
+	// tmp
+	clientUUID := uuid.New()
 
-	cs := uint32(len(createReqMetadata))
-	fmt.Println(Uint2bytes(cs))
-	message = append(message, Uint2bytes(cs)...)
+	/* image_metadata */
+	// 先にimage_metadata作らないとサイズがわからない
+	mrenclave, err := hex.DecodeString(string(out))
+	if err != nil {
+		fmt.Printf("failed parse mrenclave : %s", err.Error())
+		return err
+	}
 
-	message = append(message, imageMetadata...)
-	message = append(message, createReqMetadata...)
+	imd, err := createImageMetadata(clientUUID, mrenclave)
+	if err != nil {
+		fmt.Printf("failed createImageMetadata: %s", err.Error())
+	}
+
+	/* image_metadata_size*/
+	imdSz := uint32(len(imd))
+	imageMetadataSize := Uint2bytes(imdSz)
+
+	/* create_req_metadata */
+	crm, err := createRequestMetadata(clientUUID)
+	if err != nil {
+		fmt.Printf("failed createRequestMetadata: %s", err.Error())
+	}
+
+	/* create_req_metadata_size */
+	crmSz := uint32(len(crm))
+	createRequestMetadataSize := Uint2bytes(crmSz)
+
+	/* create message */
+	var message []byte
+	message = append(message, imageID...)
+	message = append(message, imageMetadataSize...)
+	message = append(message, createRequestMetadataSize...)
+	message = append(message, imd...)
+	message = append(message, crm...)
 
 	_, err = conn.Write([]byte(message))
 	if err != nil {
 		log.Printf("error: %v\n", err)
 		return err
 	}
-	log.Printf("imd_size: %d", len(imageMetadata))
-	log.Printf("crm_size: %d", len(createReqMetadata))
+	log.Printf("imd_size: %d", imdSz)
+	log.Printf("crm_size: %d", crmSz)
 
 	log.Printf("send: %s\n", message)
 	// これをしないとEOFが通知されずにレスポンスの処理まで進んでくれない
@@ -67,12 +142,9 @@ func VMCreate(imageID uuid.UUID, imageMetadata []byte, createReqMetadata []byte)
 
 func main() {
 	imageID := uuid.New()
-	imageMetadata := "abcd"
-	createReqMetadata := "efghi"
-
 	fmt.Println(imageID.MarshalBinary())
 
-	err := VMCreate(imageID, []byte(imageMetadata), []byte(createReqMetadata))
+	err := VMCreate(imageID)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

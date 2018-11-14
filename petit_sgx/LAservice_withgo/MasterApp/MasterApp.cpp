@@ -35,7 +35,7 @@ sgx_enclave_id_t master_enclave_id;
 void print_hex(uint8_t * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        printf("%x", str[i]);
+        printf("%d ", str[i]);
     }
     printf("\n");
 }
@@ -87,7 +87,7 @@ void read_exchange_report (int remote_fd, la_server_arg_t la) {
         exit(-1);
     }
 
-    status = ecall_exchange_report(master_enclave_id, &ret_val, dh_msg2, &dh_msg3, la);
+    status = ecall_exchange_report(master_enclave_id, &ret_val, dh_msg2, &dh_msg3, la.arg);
         if (status!=SGX_SUCCESS) {
         printf("ecall_exchange_report failed: Error code is %x\n", status);
         sgx_destroy_enclave(master_enclave_id);
@@ -197,6 +197,7 @@ void go_serve (int remote_fd) {
     uint8_t * image_metadata;
     uint8_t * create_req_metadata;
     la_arg_t la_arg;
+    memset(&la_arg, 0, sizeof(la_arg_t));
 
     uint8_t buf[1024]; //TODO サイズを決める
     memset(buf, 0, sizeof buf);
@@ -243,6 +244,10 @@ void go_serve (int remote_fd) {
     print_hex((uint8_t*)&image_id, sizeof(image_id_t));
     print_hex(image_metadata, image_metadata_size);
     print_hex(create_req_metadata, create_req_metadata_size);
+
+    printf("--- la_arg ---\n");
+    print_hex(la_arg.imd, la_arg.imd_sz);
+    print_hex(la_arg.crm, la_arg.crm_sz);
 }
 
 void run_go_server ()

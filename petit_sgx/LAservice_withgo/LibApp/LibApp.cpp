@@ -31,9 +31,8 @@ extern void get_mrenclave(sgx_enclave_id_t);
 void print_hex(uint8_t * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        printf("%x", str[i]);
+        printf("%02x", str[i]);
     }
-    printf("\n");
 }
 
 void ocall_print(char *str)

@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 
-#define FILE_PATH "/tmp/sgx/unix_domain.uds"
+#define FILE_PATH "./unix_domain.uds"
 
 void print_hex(uint8_t * data, size_t size) {
     int i;
@@ -22,6 +22,14 @@ void print_hex(uint8_t * data, size_t size) {
 }
 
 typedef uint8_t image_id_t[16];
+
+/* データ構造
+image_id_t(uint8[16]) image_id
+uint32_t image_metadata_size
+uint32_t create_req_metadata_size
+uint8_t * image_metadata
+uint8_t * create_req_metadata
+*/
 
 void serve(int remote_fd) {
     image_id_t image_id;
