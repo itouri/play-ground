@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -16,7 +16,7 @@
  *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT N-OT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -29,22 +29,44 @@
  *
  */
 
+enclave  {
+    include "sgx_eid.h"
+    include "sgx_dh.h"
+    include "../Include/datatypes.h"
 
-#ifndef _ENCLAVE_H_
-#define _ENCLAVE_H_
+    include "sgx_trts.h"
+	include "sgx_utils.h"
+	include "sgx_tkey_exchange.h"
 
-#include <stdlib.h>
-#include <assert.h>
+    from "sgx_tkey_exchange.edl" import *;
+    
+    trusted{
+        public uint32_t ecall_session_request([in,out] sgx_dh_msg1_t *dh_msg1);
+        public uint32_t ecall_exchange_report(sgx_dh_msg2_t dh_msg2, [in,out] sgx_dh_msg3_t *dh_msg3, la_arg_t la_arg);
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+        // ra
+        public sgx_status_t get_report([out] sgx_report_t *report,
+			[in] sgx_target_info_t *target_info);
 
-void printf(const char *fmt, ...);
+		public size_t get_pse_manifest_size();
 
+		public sgx_status_t get_pse_manifest([out, count=sz] char *buf, size_t sz);
 
-#if defined(__cplusplus)
-}
-#endif
+		public sgx_status_t enclave_ra_init(sgx_ec256_public_t key, int b_pse,
+			[out] sgx_ra_context_t *ctx, [out] sgx_status_t *pse_status);
 
-#endif /* !_ENCLAVE_H_ */
+		public sgx_status_t enclave_ra_init_def(int b_pse,
+			[out] sgx_ra_context_t *ctx, [out] sgx_status_t *pse_status);
+
+		public sgx_status_t enclave_ra_get_key_hash(
+			[out] sgx_status_t *get_keys_status, sgx_ra_context_t ctx,
+			sgx_ra_key_type_t type, [out] sgx_sha256_hash_t *hash);
+
+		public sgx_status_t enclave_ra_close(sgx_ra_context_t ctx);
+    };
+
+    untrusted{
+        // added
+        void ocall_print([in, string] char *str);
+    };
+};

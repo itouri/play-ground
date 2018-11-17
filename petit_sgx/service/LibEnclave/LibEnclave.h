@@ -40,8 +40,9 @@
 extern "C" {
 #endif
 
-void printf(const char *fmt, ...);
-
+//void printf(const char *fmt, ...);
+void get_mr_enclave();
+uint32_t create_session();
 
 #if defined(__cplusplus)
 }
