@@ -107,14 +107,17 @@ LibApp_Cpp_Files := $(wildcard LibApp/*.cpp)
 VMApp_Cpp_Files := $(wildcard VMApp/*.cpp)
 App_Include_Paths := -I$(SGX_SDK)/include -I./Include #-I./LocalAttestationCode
 
+RA_Cxx_Files_cpp := $(addprefix ra/, client.cpp)
+RA_Cxx_Files_c := $(addprefix ra/, quote_size.c sgx_detect_linux.c sgx_stub.c)
+RA_Cxx_Objects := $(RA_Cxx_Files_cpp) $(RA_Cxx_Files_c)
+
 ## You can't use $(wildcard ...) with automake so all source files 
 ## have to be explicitly listed.
-RA_Files_cpp := $(addprefix ra/, common.cpp msgio.cpp client.cpp)
-RA_Files_c := $(addprefix ra/, byteorder.c crypto.c hexutil.c fileio.c base64.c logfile.c quote_size.c sgx_detect_linux.c sgx_stub.c)
+RA_Link_Files_cpp := $(addprefix ra/, common.cpp msgio.cpp client.cpp)
+RA_Link_Files_c := $(addprefix ra/, byteorder.c crypto.c hexutil.c fileio.c base64.c logfile.c quote_size.c sgx_detect_linux.c sgx_stub.c)
 
 # 複数指定できないのかな
-RA_Objects := $(RA_Files_cpp:.cpp=.o) $(RA_Files_c:.c=.o)
-$(warning $(RA_Objects))
+RA_Link_Objects := $(RA_Link_Files_cpp:.cpp=.o) $(RA_Link_Files_c:.c=.o)
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 # Three configuration modes - Debug, prerelease, release
@@ -220,7 +223,7 @@ endif
 endif
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) MasterEnclave.so LibEnclave.so Enclave3.so $(MasterApp_Name) $(VMApp_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) MasterEnclave.so LibEnclave.so Enclave3.so $(MasterApp_Name) $(VMApp_Name) $(RA_Cxx_Objects)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the enclaves (MasterEnclave.so, LibEnclave.so, Enclave3.so) first with your signing keys before you run the $(MasterApp_Name) to launch and access the enclave."
 	@echo "To sign the enclaves use the following commands:"
@@ -230,7 +233,7 @@ all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) Mast
 	@echo "You can also sign the enclaves using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) $(MasterEnclave_Name) $(VMEnclave_Name) $(Enclave_Name_3) $(MasterApp_Name) $(VMApp_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) $(MasterEnclave_Name) $(VMEnclave_Name) $(Enclave_Name_3) $(MasterApp_Name) $(VMApp_Name) $(RA_Cxx_Objects)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -267,8 +270,8 @@ MasterApp/%.o: MasterApp/%.cpp MasterEnclave/MasterEnclave_u.h #$(RA_Files_c) $(
 	@$(CXX) $(App_Cxx_Flags) -I$(SGX_SDK)/include -c $< -o $@ -lcrypto -lssl
 	@echo "CXX  <=  $<"
 
-$(MasterApp_Name): MasterApp/MasterEnclave_u.o $(MasterApp_Cpp_Objects) $(UnTrustLib_Name)
-	@$(CXX) $^ $(RA_Objects) -ldl -l:libsgx_capable.a -o $@ $(App_Link_Flags) $(UOpenSSL_Library_Paths) -lsgx_ukey_exchange -lcrypto -lssl
+$(MasterApp_Name): MasterApp/MasterEnclave_u.o $(MasterApp_Cpp_Objects) $(UnTrustLib_Name)#$(SGX_SDK)/include
+	@$(CXX) $^ $(RA_Link_Objects) -o $@ -ldl -l:libsgx_capable.a $(App_Link_Flags) $(UOpenSSL_Library_Paths) -lsgx_ukey_exchange -lcrypto -lssl
 	@echo "LINK =>  $@"
 
 ## LibEnclave

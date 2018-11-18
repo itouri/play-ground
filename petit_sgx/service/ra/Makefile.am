@@ -61,7 +61,7 @@ CLEANFILES = Enclave_u.c Enclave_u.h Enclave.edl Enclave.signed.so
 
 server: sp
 
-bin_PROGRAMS = sp #client  
+bin_PROGRAMS = sp client  
 
 ## You can't use $(wildcard ...) with automake so all source files 
 ## have to be explicitly listed.

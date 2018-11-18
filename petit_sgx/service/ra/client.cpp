@@ -133,8 +133,9 @@ char verbose= 0;
 
 //int main(int argc, char *argv[]){}
 
-int ra (int argc, char *argv[], sgx_enclave_id_t eid)
+int ra (int argc, char *argv[], unsigned long ueid)
 {
+	sgx_enclave_id_t eid = (sgx_enclave_id_t)ueid;
 	config_t config;
 	sgx_launch_token_t token= { 0 };
 	sgx_status_t status;
@@ -719,6 +720,13 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	/* Read Msg4 provided by Service Provider, then process */
         
 	msgio->read((void **)&msg4, &msg4sz);
+	edividerWithText("is ok?");
+
+	char * msg = (char*)malloc(5);
+	size_t sz = 5;
+	msgio->read((void**)&msg, &sz);
+	eprintf("msg: %s\n", msg);
+
 
 	edividerWithText("Enclave Trust Status from Service Provider");
 

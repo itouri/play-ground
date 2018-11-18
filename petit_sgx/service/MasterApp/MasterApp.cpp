@@ -288,7 +288,7 @@ int main (int argc, char *argv[])
         printf("\nLoad Enclave Failure");
     }
 
-    if ( ra(argc, argv, master_enclave_id) != 0) {
+    if ( ra(argc, argv, (unsigned long)master_enclave_id) != 0) {
         printf("remote attestation failed\n");
         return 0;
     }

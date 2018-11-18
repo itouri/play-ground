@@ -71,6 +71,10 @@ static const unsigned char def_service_private_key[32] = {
 	0xad, 0x57, 0x34, 0x53, 0xd1, 0x03, 0x8c, 0x01
 };
 
+// static uint8_t master_mrenclave[32] = {
+
+// }
+
 typedef struct config_struct {
 	sgx_spid_t spid;
 	uint16_t quote_type;
@@ -753,6 +757,8 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			eprintf("isv_svn     = %04hX\n", r->isv_svn);
 			eprintf("report_data = %s\n",
 				hexstring(&r->report_data, sizeof(sgx_report_data_t)));
+
+			//TODO check mrenclave
 		}
 
 
@@ -794,6 +800,9 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 				eprintf("SHA256(SK) = %s\n", hexstring(hashsk, 32));
 			}
 		}
+		//TODO 秘密鍵の送信
+		const char * msg = "ok\n";
+		msgio->send((void*)msg, strlen(msg));
 
 	} else {
 		eprintf("Attestation failed\n");
@@ -1188,6 +1197,7 @@ int get_attestation_report(IAS_Connection *ias, int version,
 		} else if ( !(reportObj["isvEnclaveQuoteStatus"].ToString().compare("CONFIGURATION_NEEDED"))) {
 			if ( strict_trust ) {
 				msg4->status = NotTrusted_ItsComplicated;
+
 				if ( verbose ) eprintf("Enclave NOT TRUSTED and COMPLICATED - Reason: %s\n",
 					reportObj["isvEnclaveQuoteStatus"].ToString().c_str());
 			} else {
