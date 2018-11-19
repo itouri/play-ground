@@ -57,7 +57,7 @@ void generate_key(int x, int y, int totient, unsigned long * dest_e, unsigned lo
 }
 
 // return enc_msg size
-void encrypt(char * enc_msg, char * msg, size_t msg_size, unsigned long pubkey, int n)
+void encrypt(unsigned char * enc_msg, unsigned char * msg, size_t msg_size, unsigned long pubkey, int n)
 {
     int i, j;
     unsigned long k;
@@ -102,9 +102,9 @@ int main()
     int i;
     int x, y, n, totient;
     unsigned char msg[100];
+    int msg_len;
     unsigned long pubkey, prvkey;
     unsigned char * enc_msg;
-
 
     printf("ENTER FIRST PRIME NUMBER\n");
     scanf("%d", &x);
@@ -125,27 +125,33 @@ int main()
         return -1;
     }
 
+    // n = 253;
+    // pubkey = 3;
+    // prvkey = 147;
+
     printf("\nENTER MESSAGE OR STRING TO ENCRYPT\n");
     memset(msg, 0, sizeof(msg));
     scanf("%s", msg);
 
     printf("\nINPUTED MESSAGE\n");
-    for (i = 0; i < strlen(msg); i++)
+    for (i = 0; i < strlen((const char*)msg); i++)
         printf("%02x ", msg[i]);
     printf("\n");
 
-    enc_msg = (char*)malloc(strlen(msg));
+    msg_len = strlen((const char *)msg);
+    enc_msg = (unsigned char*)malloc(msg_len);
 
     n = x * y;
     totient = (x - 1) * (y - 1);
 
     generate_key(x, y, totient, &pubkey, &prvkey);
 
+    printf("n  : %d\n", n);
     printf("pub: %ld\n", pubkey);
     printf("prv: %ld\n", prvkey);
 
-    encrypt(enc_msg, msg, strlen(msg), pubkey, n);
-    decrypt(msg, enc_msg, strlen(msg), prvkey, n);
+    encrypt(enc_msg, msg, msg_len, pubkey, n);
+    decrypt(msg, enc_msg, msg_len, prvkey, n);
 
     return 0;
 }
