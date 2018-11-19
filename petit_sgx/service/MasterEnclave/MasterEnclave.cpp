@@ -201,6 +201,14 @@ ATTESTATION_STATUS ecall_exchange_report(
         return INVALID_SESSION;
     }
 
+    if ( memcmp(&imd.client_id, &crm.client_id, sizeof(imd.client_id)) ) {
+        printf("client id is not match\n");
+    }
+
+    if ( memcmp(&imd.mrenclave, &dh_msg2.report.body.mr_enclave, sizeof(imd.mrenclave)) ) {
+        printf("mrenclave is not match\n");
+    }
+
     // if(status != SUCCESS)
     // {
     //     end_session(src_enclave_id);
