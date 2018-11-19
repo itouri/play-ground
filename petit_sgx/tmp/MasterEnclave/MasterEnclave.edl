@@ -34,7 +34,7 @@ enclave  {
     include "../Include/datatypes.h"
     include "../Include/dh_session_protocol.h"
     trusted{
-        public void test_ecall(sgx_enclave_id_t enclave_id);
+        public void test_ecall();
     };
 
     untrusted{

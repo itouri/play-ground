@@ -64,7 +64,7 @@ int main()
     }
     printf("id: %u\n", (uint64_t)master_enclave_id);
 
-    int ret = test_ecall(master_enclave_id, master_enclave_id);
+    int ret = test_ecall(master_enclave_id);
     if (ret != SGX_SUCCESS) {
         printf("failed: %x\n", ret);
     }
