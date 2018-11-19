@@ -16,7 +16,7 @@
  *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT N-OT
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -29,46 +29,40 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "sgx_dh.h"
-    include "../Include/datatypes.h"
+#ifndef _DH_SESSION_PROROCOL_H
+#define _DH_SESSION_PROROCOL_H
 
-    include "sgx_trts.h"
-	include "sgx_utils.h"
-	include "sgx_tkey_exchange.h"
+#include "sgx_ecp_types.h"
+#include "sgx_key.h"
+#include "sgx_report.h"
+#include "sgx_attributes.h"
 
-    from "sgx_tkey_exchange.edl" import *;
-    
-    trusted{
-        public uint32_t ecall_session_request([in,out] sgx_dh_msg1_t *dh_msg1);
-        public uint32_t ecall_exchange_report(sgx_dh_msg2_t dh_msg2, [in,out] sgx_dh_msg3_t *dh_msg3, la_arg_t la_arg);
+#define NONCE_SIZE         16
+#define MAC_SIZE           16
 
-        // ra
-        public sgx_status_t get_report([out] sgx_report_t *report,
-			[in] sgx_target_info_t *target_info);
+#define MSG_BUF_LEN        sizeof(ec_pub_t)*2
+#define MSG_HASH_SZ        32
 
-		public size_t get_pse_manifest_size();
 
-		public sgx_status_t get_pse_manifest([out, count=sz] char *buf, size_t sz);
+//Session information structure
+typedef struct _la_dh_session_t
+{
+    uint32_t  session_id; //Identifies the current session
+    uint32_t  status; //Indicates session is in progress, active or closed
+    union
+    {
+        struct
+        {
+			sgx_dh_session_t dh_session;
+        }in_progress;
 
-		public sgx_status_t enclave_ra_init(sgx_ec256_public_t key, int b_pse,
-			[out] sgx_ra_context_t *ctx, [out] sgx_status_t *pse_status);
-
-		public sgx_status_t enclave_ra_init_def(int b_pse,
-			[out] sgx_ra_context_t *ctx, [out] sgx_status_t *pse_status);
-
-		public sgx_status_t enclave_ra_get_key_hash(
-			[out] sgx_status_t *get_keys_status, sgx_ra_context_t ctx,
-			sgx_ra_key_type_t type, [out] sgx_sha256_hash_t *hash);
-
-		public sgx_status_t enclave_ra_close(sgx_ra_context_t ctx);
-
-        public void ecall_set_private_key(unsigned long key);
+        struct
+        {
+            sgx_key_128bit_t AEK; //Session Key
+            uint32_t counter; //Used to store Message Sequence Number
+        }active;
     };
+} dh_session_t;
 
-    untrusted{
-        // added
-        void ocall_print([in, string] char *str);
-    };
-};
+
+#endif

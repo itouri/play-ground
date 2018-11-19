@@ -105,7 +105,7 @@ sgx_status_t sgx_create_enclave_search (
 
 void usage();
 int do_quote(sgx_enclave_id_t eid, config_t *config);
-int do_attestation(sgx_enclave_id_t eid, config_t *config);
+int do_attestation(sgx_enclave_id_t eid, config_t *config, unsigned long * pkey);
 
 char debug= 0;
 char verbose= 0;
@@ -133,7 +133,7 @@ char verbose= 0;
 
 //int main(int argc, char *argv[]){}
 
-int ra (int argc, char *argv[], unsigned long ueid)
+int ra (int argc, char *argv[], unsigned long ueid, unsigned long * pkey)
 {
 	sgx_enclave_id_t eid = (sgx_enclave_id_t)ueid;
 	config_t config;
@@ -412,7 +412,7 @@ int ra (int argc, char *argv[], unsigned long ueid)
 	/* Are we attesting, or just spitting out a quote? */
 
 	if ( config.mode == MODE_ATTEST ) {
-		do_attestation(eid, &config);
+		do_attestation(eid, &config, pkey);
 	} else if ( config.mode == MODE_EPID || config.mode == MODE_QUOTE ) {
 		do_quote(eid, &config);
 	} else {
@@ -424,7 +424,7 @@ int ra (int argc, char *argv[], unsigned long ueid)
 	close_logfile(fplog);
 }
 
-int do_attestation (sgx_enclave_id_t eid, config_t *config)
+int do_attestation (sgx_enclave_id_t eid, config_t *config, unsigned long * pkey)
 {
 	sgx_status_t status, sgxrv, pse_status;
 	sgx_ra_msg1_t msg1;
@@ -720,13 +720,15 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	/* Read Msg4 provided by Service Provider, then process */
         
 	msgio->read((void **)&msg4, &msg4sz);
-	edividerWithText("is ok?");
-
-	char * msg = (char*)malloc(5);
-	size_t sz = 5;
-	msgio->read((void**)&msg, &sz);
-	eprintf("msg: %s\n", msg);
-
+	edividerWithText("sended sp priv key");
+	
+	// read private key
+	unsigned long msg = 0;
+	unsigned long * pmsg = &msg;
+	size_t msg_size = sizeof(unsigned long);
+	msgio->read((void**)&pmsg, &msg_size);
+	eprintf("msg: %ld\n", *pmsg);
+	memcpy(pkey, pmsg, sizeof(unsigned long));
 
 	edividerWithText("Enclave Trust Status from Service Provider");
 

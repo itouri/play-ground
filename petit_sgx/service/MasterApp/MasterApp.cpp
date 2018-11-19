@@ -150,7 +150,7 @@ uint32_t load_master_enclave()
 
     ret = sgx_create_enclave(MASTER_ENC_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &master_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
-                return ret;
+        return ret;
     }
 
     return SGX_SUCCESS;
@@ -206,8 +206,7 @@ void go_serve (int remote_fd) {
     int n;
     n = read(remote_fd, buf, sizeof buf);
     if (n < 0) {
-        perror(
-            "read length is zero");
+        perror("read length is zero");
         return;
     }
     memcpy(&image_id, buf, sizeof(image_id_t));
@@ -288,9 +287,19 @@ int main (int argc, char *argv[])
         printf("\nLoad Enclave Failure");
     }
 
-    if ( ra(argc, argv, (unsigned long)master_enclave_id) != 0) {
+    unsigned long pkey = 0;
+    if ( ra(argc, argv, (unsigned long)master_enclave_id, &pkey) != 0) {
         printf("remote attestation failed\n");
-        return 0;
+        return -1;
+    }
+
+    printf("\napp pkey %ld\n", pkey);
+
+    sgx_status_t status = ecall_set_private_key(master_enclave_id, pkey);
+        if (status!=SGX_SUCCESS) {
+        printf("ecall_private_key: Error code is %x\n", status);
+        sgx_destroy_enclave(master_enclave_id);
+        return -1;
     }
     
     run_go_server();

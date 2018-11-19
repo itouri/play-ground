@@ -800,9 +800,11 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 				eprintf("SHA256(SK) = %s\n", hexstring(hashsk, 32));
 			}
 		}
+
 		//TODO 秘密鍵の送信
-		const char * msg = "ok\n";
-		msgio->send((void*)msg, strlen(msg));
+		unsigned long msg = 147;
+		int msg_size = sizeof(unsigned long);
+		msgio->send((void*)&msg, msg_size);
 
 	} else {
 		eprintf("Attestation failed\n");

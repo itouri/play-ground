@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -16,7 +16,7 @@
  *     from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT N-OT
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -29,46 +29,53 @@
  *
  */
 
-enclave  {
-    include "sgx_eid.h"
-    include "sgx_dh.h"
-    include "../Include/datatypes.h"
+#include <stdlib.h>
+#include <math.h>
 
-    include "sgx_trts.h"
-	include "sgx_utils.h"
-	include "sgx_tkey_exchange.h"
+#include <stdarg.h>
+#include <stdio.h>      /* vsnprintf */
+#include <string.h>      /* vsnprintf */
 
-    from "sgx_tkey_exchange.edl" import *;
-    
-    trusted{
-        public uint32_t ecall_session_request([in,out] sgx_dh_msg1_t *dh_msg1);
-        public uint32_t ecall_exchange_report(sgx_dh_msg2_t dh_msg2, [in,out] sgx_dh_msg3_t *dh_msg3, la_arg_t la_arg);
+#include "MasterEnclave.h"
+#include "MasterEnclave_t.h"  /* print_string */
 
-        // ra
-        public sgx_status_t get_report([out] sgx_report_t *report,
-			[in] sgx_target_info_t *target_info);
+/* 
+ * printf: 
+ *   Invokes OCALL to display the enclave buffer to the terminal.
+ */
+void printf(const char *fmt, ...)
+{
+    char buf[BUFSIZ] = {'\0'};
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, BUFSIZ, fmt, ap);
+    va_end(ap);
+    print_ocall(buf);
+}
 
-		public size_t get_pse_manifest_size();
+void decrypt(unsigned char * msg, unsigned char * enc_msg, size_t msg_size, unsigned long prvkey, int n)
+{
+  int i, j;
+  unsigned long k;
 
-		public sgx_status_t get_pse_manifest([out, count=sz] char *buf, size_t sz);
+  for ( i=0; i < msg_size; i++ ) {
+      k = 1;
+      for (j=0; j < prvkey; j++) {
+          k *= enc_msg[i];
+          k %= n;
+      }
+      msg[i] = k;
+  }
+}
 
-		public sgx_status_t enclave_ra_init(sgx_ec256_public_t key, int b_pse,
-			[out] sgx_ra_context_t *ctx, [out] sgx_status_t *pse_status);
+void test_ecall(unsigned char * enc_msg, size_t msg_size, int n) {
+  int i;
+  unsigned long prvkey = 147;
+  unsigned char * msg = (unsigned char *)malloc(msg_size);
 
-		public sgx_status_t enclave_ra_init_def(int b_pse,
-			[out] sgx_ra_context_t *ctx, [out] sgx_status_t *pse_status);
-
-		public sgx_status_t enclave_ra_get_key_hash(
-			[out] sgx_status_t *get_keys_status, sgx_ra_context_t ctx,
-			sgx_ra_key_type_t type, [out] sgx_sha256_hash_t *hash);
-
-		public sgx_status_t enclave_ra_close(sgx_ra_context_t ctx);
-
-        public void ecall_set_private_key(unsigned long key);
-    };
-
-    untrusted{
-        // added
-        void ocall_print([in, string] char *str);
-    };
-};
+  decrypt(msg, enc_msg, msg_size, prvkey, n);
+  printf("\nENC THE DECRYPTED MESSAGE IS\n");
+  for (i = 0; i < msg_size; i++)
+      printf("%02x ", msg[i]);
+  printf("\n");
+}

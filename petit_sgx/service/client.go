@@ -25,6 +25,21 @@ func Uint2bytes(i uint32) []byte {
 	return bytes
 }
 
+func encrypt(msg []byte, msgSize int, pubkey uint64, n uint64) []byte {
+	encMsg := make([]byte, msgSize)
+	var k uint64
+	var j uint64
+	for i, m := range msg {
+		k = 1
+		for j = 0; j < pubkey; j++ {
+			k *= uint64(m)
+			k = k % n
+		}
+		encMsg[i] = byte(k)
+	}
+	return encMsg
+}
+
 func createRequestMetadata(clientUUID uuid.UUID) ([]byte, error) {
 	var crm []byte
 
@@ -114,13 +129,16 @@ func VMCreate(imageUUID uuid.UUID) error {
 	crmSz := uint32(len(crm))
 	createRequestMetadataSize := Uint2bytes(crmSz)
 
+	encImd := encrypt(imd, int(imdSz), 3, 253)
+	encCrm := encrypt(crm, int(crmSz), 3, 253)
+
 	/* create message */
 	var message []byte
 	message = append(message, imageID...)
 	message = append(message, imageMetadataSize...)
 	message = append(message, createRequestMetadataSize...)
-	message = append(message, imd...)
-	message = append(message, crm...)
+	message = append(message, encImd...)
+	message = append(message, encCrm...)
 
 	_, err = conn.Write([]byte(message))
 	if err != nil {

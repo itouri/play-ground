@@ -56,7 +56,6 @@ void generate_key(int x, int y, int totient, unsigned long * dest_e, unsigned lo
     *dest_d = d[0];
 }
 
-// return enc_msg size
 void encrypt(unsigned char * enc_msg, unsigned char * msg, size_t msg_size, unsigned long pubkey, int n)
 {
     int i, j;
@@ -73,7 +72,7 @@ void encrypt(unsigned char * enc_msg, unsigned char * msg, size_t msg_size, unsi
 
     printf("\nTHE ENCRYPTED MESSAGE IS\n");
     for (i = 0; i < msg_size; i++)
-        printf("%02x ", enc_msg[i]);
+        printf("%02d ", enc_msg[i]);
     printf("\n");
 }
 
@@ -93,7 +92,7 @@ void decrypt(unsigned char * msg, unsigned char * enc_msg, size_t msg_size, unsi
 
     printf("\nTHE DECRYPTED MESSAGE IS\n");
     for (i = 0; i < msg_size; i++)
-        printf("%02x ", msg[i]);
+        printf("%02d ", msg[i]);
     printf("\n");
 }
 
@@ -106,28 +105,24 @@ int main()
     unsigned long pubkey, prvkey;
     unsigned char * enc_msg;
 
-    printf("ENTER FIRST PRIME NUMBER\n");
-    scanf("%d", &x);
-    if ( !is_prime(x) ) {
-        printf("input is not prime number\n");
-        return -1;
-    }
+    // printf("ENTER FIRST PRIME NUMBER\n");
+    // scanf("%d", &x);
+    // if ( !is_prime(x) ) {
+    //     printf("input is not prime number\n");
+    //     return -1;
+    // }
 
-    printf("ENTER SECOND PRIME NUMBER\n");
-    scanf("%d", &y);
-    if ( !is_prime(y) ) {
-        printf("input is not prime number\n");
-        return -1;
-    }
+    // printf("ENTER SECOND PRIME NUMBER\n");
+    // scanf("%d", &y);
+    // if ( !is_prime(y) ) {
+    //     printf("input is not prime number\n");
+    //     return -1;
+    // }
 
-    if ( x == y ) {
-        printf("x and y are same\n");
-        return -1;
-    }
-
-    // n = 253;
-    // pubkey = 3;
-    // prvkey = 147;
+    // if ( x == y ) {
+    //     printf("x and y are same\n");
+    //     return -1;
+    // }
 
     printf("\nENTER MESSAGE OR STRING TO ENCRYPT\n");
     memset(msg, 0, sizeof(msg));
@@ -135,20 +130,24 @@ int main()
 
     printf("\nINPUTED MESSAGE\n");
     for (i = 0; i < strlen((const char*)msg); i++)
-        printf("%02x ", msg[i]);
+        printf("%02d ", msg[i]);
     printf("\n");
 
     msg_len = strlen((const char *)msg);
     enc_msg = (unsigned char*)malloc(msg_len);
 
-    n = x * y;
-    totient = (x - 1) * (y - 1);
+    // n = x * y;
+    // totient = (x - 1) * (y - 1);
 
-    generate_key(x, y, totient, &pubkey, &prvkey);
+    // generate_key(x, y, totient, &pubkey, &prvkey);
 
-    printf("n  : %d\n", n);
-    printf("pub: %ld\n", pubkey);
-    printf("prv: %ld\n", prvkey);
+    // printf("n  : %d\n", n);
+    // printf("pub: %ld\n", pubkey);
+    // printf("prv: %ld\n", prvkey);
+
+    n = 253;
+    pubkey = 3;
+    prvkey = 147;
 
     encrypt(enc_msg, msg, msg_len, pubkey, n);
     decrypt(msg, enc_msg, msg_len, prvkey, n);

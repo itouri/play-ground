@@ -52,6 +52,7 @@
 #include "error_codes.h"
 
 sgx_dh_session_t sgx_dh_session;
+unsigned long prvkey = -1;
 
 /* 
  * printf: 
@@ -70,9 +71,29 @@ void printf(const char *fmt, ...)
 void print_hex(unsigned char * str, size_t size) {
     int i;
     for (i=0; i<size; i++) {
-        printf("%x ", str[i]);
+        printf("%02d ", str[i]);
     }
     printf("\n");
+}
+
+void decrypt(unsigned char * msg, unsigned char * enc_msg, size_t msg_size, int n)
+{
+  int i, j;
+  unsigned long k;
+
+  if (prvkey == -1) {
+      printf("prvkey is not setted!\n");
+      return;
+  }
+
+  for ( i=0; i < msg_size; i++ ) {
+      k = 1;
+      for (j=0; j < prvkey; j++) {
+          k *= enc_msg[i];
+          k %= n;
+      }
+      msg[i] = k;
+  }
 }
 
 //Function that is used to verify the trust of the other enclave
@@ -152,7 +173,14 @@ ATTESTATION_STATUS ecall_exchange_report(
 
     image_metadata_t imd;
     memset(&imd, 0, sizeof(image_metadata_t));
-    memcpy(&imd, (const void *)la_arg.imd, sizeof(image_metadata_t));
+    // memcpy(&imd, (const void *)la_arg.imd, sizeof(image_metadata_t));
+    decrypt((unsigned char*)&imd, (unsigned char*)la_arg.imd, la_arg.imd_sz, 253);
+
+    create_req_data_t crm;
+    memset(&crm, 0, sizeof(create_req_data_t));
+    decrypt((unsigned char*)&crm, (unsigned char*)la_arg.crm, la_arg.crm_sz, 253);
+
+    printf("\nfrom enc: %ld\n", prvkey);
 
     /* imd と crm の検証 */
     printf("--- reported enclave ---\n");
@@ -163,6 +191,9 @@ ATTESTATION_STATUS ecall_exchange_report(
 
     printf("--- imd ---\n");
     print_hex((unsigned char *)&imd, sizeof(image_metadata_t));
+
+    printf("--- crm ---\n");
+    print_hex((unsigned char *)&crm, sizeof(create_req_data_t));
 
     //Verify source enclave's trust
     if(verify_peer_enclave_trust(&initiator_identity) != SUCCESS)
@@ -345,4 +376,9 @@ sgx_status_t enclave_ra_close(sgx_ra_context_t ctx)
         sgx_status_t ret;
         ret = sgx_ra_close(ctx);
         return ret;
+}
+
+void ecall_set_private_key(unsigned long key)
+{
+    prvkey = key;
 }
