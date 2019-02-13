@@ -5,7 +5,7 @@ module.exports = {
       app :'./app/main.ts'
     },
     output: {
-      path: `${__dirname}/dist`,
+      path: `${__dirname}/dest`,
       filename: 'bundle.js'
     },
     module: {

@@ -1,2 +1,3 @@
 # How to compile
-`webpack` at ts/
+npm install
+`webpack`

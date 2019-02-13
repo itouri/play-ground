@@ -1,9 +1,10 @@
 *.log
 *#
-marrakech/node_modules
+node_modules
 alpine.tar
 rootfs
 gettimeofday
+
 
 .vscode
 
