@@ -38,12 +38,6 @@ sgx_enclave_id_t init_app(sgx_enclave_id_t * master_enclave_id) {
     if ( ret != SGX_SUCESS ) {
         perror("failed sgx_create_enclave: %x\n" ret);
     }
-<<<<<<< HEAD
-
-    
-
-=======
->>>>>>> 726c3bff0bf977c8b396da028e8ce3f28358b3fb
     return enclave_id;
 }
 

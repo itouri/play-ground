@@ -7,3 +7,4 @@ class Presenter(AbsPresenter):
 
     def ViewDatastores(self, datastores: List[Datastore]):
         print(datastores)
+        print(datastores[])
