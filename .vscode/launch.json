@@ -4,6 +4,13 @@
    // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
    "version": "0.2.0",
    "configurations": [
+       {
+           "name": "Python: Module",
+           "type": "python",
+           "request": "launch",
+           "module": "enter-your-module-name-here",
+           "console": "integratedTerminal"
+       },
         {
             "name": ".NET Core Launch (console)",
             "type": "coreclr",

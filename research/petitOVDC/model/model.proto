@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package model;
+
+message InstanceTemplate {
+    oneof Item {
+        LxcInstanceTemplate none = 500;
+        NullInstanceTemplate null = 502;
+    }
+}
+
+message LxcInstanceTemplate {
+    int32 vcpu = 1;
+    message Image {
+        string download_url = 1;
+    }
+}
+
+message NullInstanceTemplate {
+    int32 vcpu = 1;
+    enum CrashStage {
+        NONE = 0;
+        START = 1;
+    }
+}
