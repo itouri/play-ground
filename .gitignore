@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.log
 *#
 marrakech/node_modules
@@ -12,4 +13,21 @@ gettimeofday
 *_t.h
 *_u.c
 *_u.h
+=======
+*.log
+*#
+node_modules
+alpine.tar
+rootfs
+gettimeofday
+
+
+.vscode
+
+*.o
+*_t.c
+*_t.h
+*_u.c
+*_u.h
+>>>>>>> master
 *.a
