@@ -1,2 +1,2 @@
-docker/elasticsearch/data
+docker/*/data
 __pycache__

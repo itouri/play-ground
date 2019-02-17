@@ -18,7 +18,6 @@ class DatastoreRepository:
         res = []
         for hits in resp['hits']['hits']:
             hit = hits['_source']
-            print(hit)
             ds = Datastore(hit['id'],
                            int(hit['vm_num']),
                            int(hit['vmdk_num']),
