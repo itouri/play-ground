@@ -13,5 +13,16 @@ class DatastoreRepository:
     def getAllDatastore(self) -> List[Datastore]:
         index = "permonitor"
         body = {"query": {"match_all": {}}}
-        res = self.es_handler.search(index, body)
+        resp = self.es_handler.search(index, body)
+        # FIXME for-append って遅くない？
+        res = []
+        for hits in resp['hits']['hits']:
+            hit = hits['_source']
+            print(hit)
+            ds = Datastore(hit['id'],
+                           int(hit['vm_num']),
+                           int(hit['vmdk_num']),
+                           int(hit['provisioning_capacity']),
+                           int(hit['acutual_capacity']))
+            res.append(ds)
         return res
