@@ -6,7 +6,7 @@ class Datastore(object):
     provisioning_capacity: int
     acutual_capacity: int
 
-    def __init__(self, id: str, vm_num: int, vmdk_num: int, 
+    def __init__(self, id: str, vm_num: int, vmdk_num: int,
                  provisioning_capacity: int, acutual_capacity: int) -> None:
 
         self.id = id

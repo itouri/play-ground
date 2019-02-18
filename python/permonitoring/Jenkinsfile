@@ -1,9 +1,23 @@
 pipeline {
-    agent { docker { image 'python:3.7.1' } }
+    agent {
+        dockerfile {
+            dir 'docker/cicd' 
+        } 
+    }
     stages {
         stage('build') {
             steps {
-                sh 'python --version'
+                sh 'pipenv install'
+            }
+        }
+        // stage('lint') {
+        //     steps {
+        //         sh 'pipenv run flake8'
+        //     }
+        // }
+        stage('unittest') {
+            steps {
+                sh 'pipenv run python3 -m unittest'
             }
         }
     }
