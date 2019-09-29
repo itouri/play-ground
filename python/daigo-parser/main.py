@@ -4,8 +4,8 @@ import urllib.request
 import re
 import os
 
-FILE_PATH = "links.txt"
-LINKS = []
+LINKS_PATH = "links.txt"
+RESULT_HTML_PATH = "result.html"
 pages = 277
 URL = "https://ch.nicovideo.jp/mentalist/blomaga"
 AR_URL = "https://ch.nicovideo.jp"
@@ -17,41 +17,41 @@ def fetch_html(url:str):
     return body
 
 
-def parse_body(html):
+def parse_body(html, links):
     soup = BeautifulSoup(html, "html.parser")
 
+    # 本文の link だけ取ってくる
     main_blog_div = soup.find_all("div", class_="main_blog_txt")
     for div in main_blog_div:
         for a in div.find_all("a"):
             href = a.get("href")
-            LINKS.append(href)
+            links.append(href)
         
+    # 記事を読むの href を取得
     ar_links = []
     div_mores = soup.find_all("div", class_="more")
     for div in div_mores:
         link = div.find("a")
         ar_links.append(link["href"])
-    return ar_links
+    return ar_links, links
 
 
-def filter_links():
-    global LINKS
-
-    LINKS = list(set(LINKS))
+def filter_links(links):
+    links = list(set(links))
     # なぜこんな一文が必要なんだろうか
-    LINKS = [s for s in LINKS if s is not None]
+    links = [s for s in links if s is not None]
+    return links
 
 
 # 短縮URLを復元する
-def convert_links():
-    global LINKS
+def convert_links(links):
     # 短縮URL をもとに戻す
     #XXX 汚い
-    for i in range(len(LINKS)):
-        link = LINKS[i]
+    for i in range(len(links)):
+        link = links[i]
         if "amzn.to" in link:
             try:
-                LINKS[i] = urllib.request.urlopen(link).geturl()
+                links[i] = urllib.request.urlopen(link).geturl()
             except urllib.error.HTTPError as e:
                 print('---raise HTTPError---')
                 print(e.code)
@@ -63,75 +63,78 @@ def convert_links():
                 print(e.reason)
                 print(link)
                 continue
+    return links
 
 
 def fetch():
+    links = []
     ar_links = []
     for i in tqdm(range(1, pages+1)):
         body = fetch_html(f'{URL}?page={i}')
-        links = parse_body(body)
-        ar_links.extend(links)
+        ar_link, links = parse_body(body, links)
+        ar_links.extend(ar_link)
 
     for ar_link in tqdm(ar_links):
         body = fetch_html(f'{AR_URL}{ar_link}')
-        parse_body(body)
+        _, links = parse_body(body, links)
 
-    filter_links()
-    convert_links()
+    links = filter_links(links)
+    links = convert_links(links)
 
-    with open(FILE_PATH, 'w') as f:
-        f.write("\n".join(LINKS))
-#        pickle.(LINKS, f)
+    return links
 
 
 def load():
-    with open(FILE_PATH, 'r') as f:
-        global LINKS
+    links = []
+    with open(LINKS_PATH, 'r') as f:
         for s in f:
-            LINKS.append(s.rstrip('\n'))
-        # LINKS = pickle.load(f)
+            links.append(s.rstrip('\n'))
+    return links
 
 
-def search():
-    global LINKS
-    LINKS = [x for x in LINKS if "amazon" in x or "amzn" in x]
+def search(links):
+    links = [x for x in links if "amazon" in x or "amzn" in x]
+    return links
 
 
-def main():
-    if os.path.isfile(FILE_PATH):
-        load()
-    else:    
-        fetch() 
-
-    search()
-    
-    asins = []
-    asin_url = []
-    for link in LINKS:
-        # ASIN を抽出
-        # 任意の数字またはアルファベットの10回の繰り返し
-        pattern = '.*([\w]{10}).*'
-
-        asin = re.match(pattern, link)
-        if asin is None:
-            continue
-
-        asin = asin.group(1)
-        # group() の引数って何？
-        #print(asin.group(1))
-        asins.append(asin)
-        asin_url.append([asin, link])
-
+def generate_html(asin_url):
     html_body = ""
     for asin, link in asin_url:
         img_url = f'http://images-jp.amazon.com/images/P/{asin}.09.MZZZZZZZ'
         b = f'<a href="{link}"><img src="{img_url}"></a>\n'
         html_body += b
+    return html_body
 
-    with open("result.html", "w") as f:
-        f.write(html_body)
-    #print( "\n".join( ",".join(asin_url) ) )
-    
+
+def generate_asin_url(links):
+    # [ASIN, link]
+    asin_url = []
+    for link in links:
+        # ASIN を抽出
+        # 任意の数字またはアルファベットの10回の繰り返し
+        pattern = '.*([\w]{10}).*'
+
+        asin = re.match(pattern, link)
+        if asin:
+            asin = asin.group(1)
+            asin_url.append([asin, link])
+    return asin_url
+
+
+def main():
+    links = []
+    if os.path.isfile(LINKS_PATH):
+        links = load()
+    else:    
+        links = fetch()
+        with open(LINKS_PATH, 'w') as f:
+            f.write("\n".join(links))
+
+    links = search(links) 
+    asin_url = generate_asin_url(links)
+    html_body = generate_html(asin_url)
+    with open(RESULT_HTML_PATH, "w") as f:
+        f.write(html_body)    
 
 
 if __name__ == "__main__":
