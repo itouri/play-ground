@@ -42,6 +42,29 @@ def filter_links():
     LINKS = [s for s in LINKS if s is not None]
 
 
+# 短縮URLを復元する
+def convert_links():
+    global LINKS
+    # 短縮URL をもとに戻す
+    #XXX 汚い
+    for i in range(len(LINKS)):
+        link = LINKS[i]
+        if "amzn.to" in link:
+            try:
+                LINKS[i] = urllib.request.urlopen(link).geturl()
+            except urllib.error.HTTPError as e:
+                print('---raise HTTPError---')
+                print(e.code)
+                print(e.reason)
+                print(link)
+                continue
+            except urllib.error.URLError as e:
+                print('---rase URLError---')
+                print(e.reason)
+                print(link)
+                continue
+
+
 def fetch():
     ar_links = []
     for i in tqdm(range(1, pages+1)):
@@ -54,6 +77,7 @@ def fetch():
         parse_body(body)
 
     filter_links()
+    convert_links()
 
     with open(FILE_PATH, 'w') as f:
         f.write("\n".join(LINKS))
@@ -70,7 +94,7 @@ def load():
 
 def search():
     global LINKS
-    LINKS = [x for x in LINKS if "amazon" in x]
+    LINKS = [x for x in LINKS if "amazon" in x or "amzn" in x]
 
 
 def main():
@@ -81,13 +105,17 @@ def main():
 
     search()
     
-    # ASIN を抽出
-    # 任意の数字またはアルファベットの10回の繰り返し
-    pattern = '.*([\w]{10}).*'
     asins = []
     asin_url = []
     for link in LINKS:
+        # ASIN を抽出
+        # 任意の数字またはアルファベットの10回の繰り返し
+        pattern = '.*([\w]{10}).*'
+
         asin = re.match(pattern, link)
+        if asin is None:
+            continue
+
         asin = asin.group(1)
         # group() の引数って何？
         #print(asin.group(1))
