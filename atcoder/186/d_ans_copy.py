@@ -1,0 +1,5 @@
+n = int(input())
+A = sorted([*map(int, input().split())])
+a = list(A[i]*(i*2-n+1) for i in range(n))
+print(a)
+print(sum( A[i]*(i*2-n+1) for i in range(n) ))
